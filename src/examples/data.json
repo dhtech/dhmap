@@ -1,0 +1,68 @@
+[
+{
+  "name": "D73",
+  "horizontal": 0,
+  "class": "table",
+  "x1": 67,
+  "y1": 0,
+  "x2": 59,
+  "y2": 37,
+  "width": 38,
+  "height": 8
+},
+{
+  "name": "D74",
+  "horizontal": 0,
+  "class": "table",
+  "x1": 50,
+  "y1": 0,
+  "x2": 42,
+  "y2": 37,
+  "width": 38,
+  "height": 8
+},
+{
+  "name": "D75",
+  "horizontal": 0,
+  "class": "table",
+  "x1": 33,
+  "y1": 0,
+  "x2": 25,
+  "y2": 37,
+  "width": 38,
+  "height": 8
+},
+{
+  "name": "d73-a.event.dreamhack.local",
+  "horizontal": 0,
+  "class": "switch",
+  "x1": 68,
+  "y1": 22,
+  "x2": 68,
+  "y2": 22,
+  "width": 5,
+  "height": 5
+},
+{
+  "name": "d74-a.event.dreamhack.local",
+  "horizontal": 0,
+  "class": "switch",
+  "x1": 51,
+  "y1": 22,
+  "x2": 51,
+  "y2": 22,
+  "width": 5,
+  "height": 5
+},
+{
+  "name": "d75-a.event.dreamhack.local",
+  "horizontal": 0,
+  "class": "switch",
+  "x1": 34,
+  "y1": 22,
+  "x2": 34,
+  "y2": 22,
+  "width": 5,
+  "height": 5
+}
+]
