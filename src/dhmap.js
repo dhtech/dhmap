@@ -13,6 +13,10 @@ var dhmap = {};
   var switches = {};
   var paper = null;
   var canvasObjects = {};
+  var offsetX = 0;
+  var offsetY = 0;
+  var boundingX = 0;
+  var boundingY = 0;
 
   var COLOUR = {
     'GREEN':  'rgb(137,245,108)',
@@ -28,11 +32,15 @@ var dhmap = {};
       var width = object.horizontal == 1 ? object.width : object.height;
       var height = object.horizontal == 1 ? object.height : object.width;
 
+      // See if this will increase the bounding box
+      boundingX = Math.max(object.x1 + width, boundingX);
+      boundingY = Math.max(object.y1 + height, boundingY);
+
       // Scale according to the scaling factor defined at the top
       width = width * scaling;
       height = height * scaling;
-      var x1 = object.x1 * scaling;
-      var y1 = object.y1 * scaling;
+      var x1 = (offsetX + object.x1) * scaling;
+      var y1 = (offsetY + object.y1) * scaling;
 
       // Create the rectangle and fill it
       var rectangle = paper.rect(x1, y1, width, height);
@@ -107,9 +115,34 @@ var dhmap = {};
   var renders= { 'switch': renderSwitch, 'table': renderTable };
 
   dhmap.init = function(objects) {
-    paper = Raphael(0, 0, window.innerWidth, 2048);
-    for ( var i in objects ) {
-      renders[objects[i]['class']](objects[i]);
+    var canvas = document.getElementById('canvas');
+    var menu = document.getElementById('menu');
+    var header = document.getElementById('header');
+    canvas.innerHTML = '';
+    canvas.style.marginLeft = menu.clientWidth;
+    canvas.style.width = window.innerWidth - menu.clientWidth - 2;
+    canvas.style.height = window.innerHeight - header.clientHeight - 2;
+    menu.style.height = window.innerHeight - header.clientHeight;
+    paper = Raphael(canvas);
+    var zpd = new RaphaelZPD(paper, { zoom: true, pan: true, drag: false });
+
+    switches = {};
+    canvasObjects = {};
+    offsetX = 0;
+    offsetY = 0;
+
+    for ( var hall in objects ) {
+
+      // Calculate new bounding box for this hall
+      boundingX = 0;
+      boundingY = 0;
+
+      for ( var i in objects[hall] ) {
+        renders[objects[hall][i]['class']](objects[hall][i]);
+      }
+      console.log(boundingX);
+
+      offsetX += boundingX + 20;
     }
   }
 
