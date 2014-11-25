@@ -19,10 +19,11 @@ var dhmap = {};
   var boundingY = 0;
 
   var COLOUR = {
-    'GREEN':  'rgb(137,245,108)',
-    'RED':    'rgb(255,0,0)',
-    'AMBER':  'rgb(255,191,0)',
-    'GRAY':   'rgb(212,212,212)'
+    'OK':      'rgb(137,245,108)',
+    'CRITICAL':'rgb(255,0,0)',
+    'WARNING': 'rgb(255,191,0)',
+    'UNKNOWN': 'rgb(112,112,112)',
+    'TABLE':   'rgb(242,242,242)'
   };
 
   // Draw a rectangle and save a reference to the object
@@ -70,12 +71,12 @@ var dhmap = {};
   // Draw a network switch. Defaults to amber colour
   function renderSwitch(object) {
       switches[object.name] = object;
-      renderRectangle(object, COLOUR.AMBER, false);
+      renderRectangle(object, COLOUR.UNKNOWN, false);
   }
 
   // Draw a table
   function renderTable(object) {
-      renderRectangle(object, COLOUR.GRAY, true);
+      renderRectangle(object, COLOUR.TABLE, true);
   }
 
   // Update colour of previously drawn switch
@@ -99,13 +100,13 @@ var dhmap = {};
       for ( var name in switches ) {
           // If the switch is unknown, render it as amber
           if ( statuses[name] === undefined ) {
-              setSwitchColor(name, COLOUR.AMBER);
+              setSwitchColor(name, COLOUR.UNKNOWN);
           } else {
               // A confirmed healthy switch is green, failed ones are red
               if ( statuses[name] ) {
-                  setSwitchColor(name, COLOUR.GREEN);
+                  setSwitchColor(name, COLOUR.OK);
               } else {
-                  setSwitchColor(name, COLOUR.RED);
+                  setSwitchColor(name, COLOUR.CRITICAL);
               }
           }
       }
