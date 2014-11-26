@@ -4,7 +4,7 @@ $.getJSON('./data.json', function(objects) {
   dhmap.init(objects);
 
   function updateStatus() {
-    $.getJSON('/analytics/switches.status', function(objects) {
+    $.getJSON('/analytics/ping.status', function(objects) {
       switch_status = {};
       for (var sw in objects) {
         switch_status[sw] = objects[sw] < 30;
