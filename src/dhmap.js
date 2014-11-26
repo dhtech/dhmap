@@ -22,6 +22,7 @@ var dhmap = {};
     'OK':      'rgb(137,245,108)',
     'CRITICAL':'rgb(255,0,0)',
     'WARNING': 'rgb(255,191,0)',
+    'SPEED':   'rgb(223,0,255)',
     'UNKNOWN': 'rgb(112,112,112)',
     'TABLE':   'rgb(242,242,242)'
   };
@@ -120,6 +121,8 @@ var dhmap = {};
               // A confirmed healthy switch is green, failed ones are red
               if ( statuses[name] == true ) {
                   setSwitchColor(name, COLOUR.OK);
+              } else if ( statuses[name] == 'S' ) {
+                  setSwitchColor(name, COLOUR.SPEED);
               } else if ( statuses[name] == '!' ) {
                   setSwitchColor(name, COLOUR.WARNING);
               } else {
@@ -158,7 +161,6 @@ var dhmap = {};
       for ( var i in objects[hall] ) {
         renders[objects[hall][i]['class']](objects[hall][i]);
       }
-      console.log(boundingX);
 
       offsetX += boundingX + 20;
     }
