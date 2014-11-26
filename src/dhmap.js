@@ -27,7 +27,7 @@ var dhmap = {};
   };
 
   // Draw a rectangle and save a reference to the object
-  function renderRectangle(object, fillColor, keepLabel) {
+  function renderRectangle(object, fillColor, isTable) {
       // Whether the object is horizontal or not, determines whether to swap
       // width/height to conform with RaphaelJS drawing
       var width = object.horizontal == 1 ? object.width : object.height;
@@ -48,12 +48,23 @@ var dhmap = {};
       rectangle.attr({fill: fillColor});
 
       // Add a label
-      var labelOffset = 12;
-      rectangle.label = paper.text(rectangle.attr('x') + labelOffset, rectangle.attr('y') + labelOffset, object.name);
+      if (isTable) {
+        var labelOffsetX = 12;
+        var labelOffsetY = 12;
+      } else {
+        var labelOffsetX = 12;
+        var labelOffsetY = 40;
+      }
+
+      var shortName = object.name.split('.')[0].toUpperCase();
+      rectangle.label = paper.text(rectangle.attr('x') + labelOffsetX, rectangle.attr('y') + labelOffsetY, shortName);
+      if (!isTable) {
+        rectangle.label.attr({"font-size": 16});
+      }
 
       // For some objects it might be desirable to hide the label.
       // For those objects we add a mouse over to display it.
-      if ( ! keepLabel ) {
+      if ( ! isTable ) {
         rectangle.label.hide();
         rectangle.mouseover(function() {
             this.animate({"fill-opacity": 0.8}, 500);
@@ -61,6 +72,10 @@ var dhmap = {};
         });
         rectangle.mouseout(function() {
             this.label.hide();
+        });
+        rectangle.click(function() {
+            console.log(object);
+            paper.ZPDPanTo(x1, y1);
         });
       }
 
