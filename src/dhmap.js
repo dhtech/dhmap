@@ -118,8 +118,10 @@ var dhmap = {};
               setSwitchColor(name, COLOUR.UNKNOWN);
           } else {
               // A confirmed healthy switch is green, failed ones are red
-              if ( statuses[name] ) {
+              if ( statuses[name] == true ) {
                   setSwitchColor(name, COLOUR.OK);
+              } else if ( statuses[name] == '!' ) {
+                  setSwitchColor(name, COLOUR.WARNING);
               } else {
                   setSwitchColor(name, COLOUR.CRITICAL);
               }
