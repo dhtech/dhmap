@@ -231,6 +231,9 @@ function updateSwitchDialog(sw, fqdn) {
         portdiv.css({'background-color': dhmap.colour.SPEED});
       if (!entry.trunk && parseInt(entry.speed) < 100)
         portdiv.css({'background-color': dhmap.colour.SPEED});
+      if (!entry.trunk && parseInt(entry.speed) < 1000 &&
+          ifacename.indexOf('Gigabit') != -1)
+        portdiv.css({'background-color': dhmap.colour.SPEED});
       if (entry.stp == 'error')
         portdiv.css({'background-color': dhmap.colour.STP});
     }
