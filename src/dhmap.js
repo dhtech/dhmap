@@ -8,6 +8,7 @@
 // └────────────────────────────────────────────────────────────────────┘ \\
 
 var dhmap = {};
+
 (function () {
   var scaling = 3;
   var switches = {};
@@ -17,12 +18,14 @@ var dhmap = {};
   var offsetY = 0;
   var boundingX = 0;
   var boundingY = 0;
+  var onclick = null;
 
-  var COLOUR = {
+  dhmap.colour = {
     'OK':      'rgb(137,245,108)',
     'CRITICAL':'rgb(255,0,0)',
     'WARNING': 'rgb(255,191,0)',
     'SPEED':   'rgb(223,0,255)',
+    'STP':     'rgb(0,102,153)',
     'ERRORS':  'rgb(0,255,255)',
     'UNKNOWN': 'rgb(112,112,112)',
     'TABLE':   'rgb(242,242,242)'
@@ -76,8 +79,7 @@ var dhmap = {};
             this.label.hide();
         });
         rectangle.click(function() {
-            console.log(object);
-            paper.ZPDPanTo(x1, y1);
+          onclick(object);
         });
       }
 
@@ -88,12 +90,12 @@ var dhmap = {};
   // Draw a network switch. Defaults to amber colour
   function renderSwitch(object) {
       switches[object.name] = object;
-      renderRectangle(object, COLOUR.UNKNOWN, false);
+      renderRectangle(object, dhmap.colour.UNKNOWN, false);
   }
 
   // Draw a table
   function renderTable(object) {
-      renderRectangle(object, COLOUR.TABLE, true);
+      renderRectangle(object, dhmap.colour.TABLE, true);
   }
 
   // Update colour of previously drawn switch
@@ -117,20 +119,10 @@ var dhmap = {};
       for ( var name in switches ) {
           // If the switch is unknown, render it as amber
           if ( statuses[name] === undefined ) {
-              setSwitchColor(name, COLOUR.UNKNOWN);
+              setSwitchColor(name, dhmap.colour.UNKNOWN);
           } else {
               // A confirmed healthy switch is green, failed ones are red
-              if ( statuses[name] == true ) {
-                  setSwitchColor(name, COLOUR.OK);
-              } else if ( statuses[name] == 'S' ) {
-                  setSwitchColor(name, COLOUR.SPEED);
-              } else if ( statuses[name] == 'E' ) {
-                  setSwitchColor(name, COLOUR.ERRORS);
-              } else if ( statuses[name] == '!' ) {
-                  setSwitchColor(name, COLOUR.WARNING);
-              } else {
-                  setSwitchColor(name, COLOUR.CRITICAL);
-              }
+              setSwitchColor(name, dhmap.colour[statuses[name]]);
           }
       }
   }
@@ -138,7 +130,7 @@ var dhmap = {};
   // Which render method to use for each object type
   var renders= { 'switch': renderSwitch, 'table': renderTable };
 
-  dhmap.init = function(objects) {
+  dhmap.init = function(objects, click_callback) {
     var canvas = document.getElementById('canvas');
     var menu = document.getElementById('menu');
     var header = document.getElementById('header');
@@ -150,6 +142,7 @@ var dhmap = {};
     paper = Raphael(canvas);
     var zpd = new RaphaelZPD(paper, { zoom: true, pan: true, drag: false });
 
+    onclick = click_callback;
     switches = {};
     canvasObjects = {};
     offsetX = 0;

@@ -1,3 +1,4 @@
+var switch_status = {};
 var map = null;
 
 var ping = null;
@@ -5,7 +6,19 @@ var snmp = null;
 var model = null;
 var iface = null;
 
+var errors_to_human = {
+  'OK': 'Everything working as expected',
+  'SPEED': 'At least one link is running at non-ideal speed',
+  'STP': 'At least one port is blocked by Spanning Tree',
+  'ERRORS': 'At least one port is dropping packets due to corruption',
+  'WARNING': 'The switch is not replying to SNMP requests',
+  'CRITICAL': 'The switch has not replied to ICMP for 30 seconds or more'
+};
 
+var dialog_open = {};
+
+// TODO(bluecmd): Yeah, event mode makes you write the best code.
+// Refactor later (TM).
 function checkIfaceSpeed(sw, model, ifaces) {
   if (model == undefined || ifaces == undefined)
     return true;
@@ -24,8 +37,6 @@ function checkIfaceSpeed(sw, model, ifaces) {
     if (iface.status == 'up') {
       if (iface.speed == '10') {
         failed = true;
-        if (sw.indexOf('b09-b') != -1)
-          console.log(name + ' is 10 Mbit/s');
       } else if (iface.speed == '100') {
         if (name.indexOf('GigabitEthernet') != -1) {
           failed = true;
@@ -60,7 +71,34 @@ function checkIfaceErrors(sw, model, ifaces) {
   return !failed;
 }
 
+function checkIfaceStp(sw, model, ifaces) {
+  if (model == undefined || ifaces == undefined)
+    return true;
 
+  var failed = false;
+  var show_consumer_ifaces =
+    document.getElementById('hilight_consumer_issues').checked;
+  for (var encoded_name in ifaces) {
+    var iface = ifaces[encoded_name];
+    var name = window.atob(encoded_name.split(':')[1]);
+
+    /* skip access ports if we don't want to show consumer ifaces */
+    if (!iface.trunk && !show_consumer_ifaces)
+      continue;
+
+    /* TODO(bluecmd): Maybe not set 'error' on non-ethernet
+     * interfaces that don't speak STP */
+    if (name.indexOf('Ethernet') == -1)
+      continue;
+
+    if (iface.status == 'up') {
+      if (iface.stp == 'error') {
+        failed = true;
+      }
+    }
+  }
+  return !failed;
+}
 
 function computeStatus() {
   if (iface == null || model == null || snmp == null || ping == null)
@@ -70,22 +108,140 @@ function computeStatus() {
 
   for (var sw in ping) {
     if (ping[sw] > 30) {
-      switch_status[sw] = false;
+      switch_status[sw] = 'CRITICAL';
     } else if (!checkIfaceSpeed(sw, model[sw], iface[sw])) {
-      switch_status[sw] = 'S';
+      switch_status[sw] = 'SPEED';
     } else if (!checkIfaceErrors(sw, model[sw], iface[sw])) {
-      switch_status[sw] = 'E';
+      switch_status[sw] = 'ERRORS';
+    } else if (!checkIfaceStp(sw, model[sw], iface[sw])) {
+      switch_status[sw] = 'STP';
     } else if (snmp[sw] == undefined || snmp[sw].since > 120) {
-      switch_status[sw] = '!';
+      switch_status[sw] = 'WARNING';
     } else {
-      switch_status[sw] = ping[sw] < 30;
+      switch_status[sw] = 'OK';
     }
+    var swname = sw.split('.')[0];
+    if (dialog_open[sw])
+      updateSwitchDialog(swname, sw);
   }
   dhmap.updateSwitches(switch_status);
 }
 
+function click(sw) {
+  var title = '';
+  var swname = sw.name.split('.')[0];
+  title += '<div class="status" id="switch-' + swname + '" ></div>';
+  title += swname.toUpperCase();
+  var dialog = $('<div>').attr({'title': title});
+  dialog.append($('<span>').attr({'id': 'info-' + swname}));
+  dialog.append($('<div>').attr({'id': 'ports-' + swname}));
+  dialog.append($('<br/>'));
+  dialog.append($('<div>').attr({'id': 'portinfo-' + swname}));
+  dialog.dialog({width: 500, height: 320, resizable: false,
+    close: function() {
+      $(this).dialog('destroy').remove()
+      dialog_open[sw.name] = true;
+    }});
+
+  dialog_open[sw.name] = true;
+  updateSwitchDialog(swname, sw.name);
+}
+
+function updateSwitchDialog(sw, fqdn) {
+  var div = $('#switch-' + sw);
+  if (div == undefined || iface[fqdn] == undefined)
+    return
+  div.css({'background-color': dhmap.colour[switch_status[fqdn]]});
+
+  var info = $('#info-' + sw);
+  info.html('<p>Status: ' + errors_to_human[switch_status[fqdn]] + '</p>');
+
+  var ports = $('#ports-' + sw);
+  ports.html('');
+
+  var portsdiv = $('<div>');
+
+  var order = {};
+  for (var idx in iface[fqdn]) {
+    order[parseInt(iface[fqdn][idx].lastoid)] = idx;
+  }
+
+  function sortNum(a, b) {
+    return a - b;
+  }
+
+  var count = 0;
+  var key_order = Object.keys(order).sort(sortNum);
+  for (var kidx in key_order) {
+    var idx = order[key_order[kidx]];
+    var entry = iface[fqdn][idx];
+    var ifacename = window.atob(idx.split(':')[1]);
+
+    /* Skip special interfaces */
+    if (ifacename.indexOf('Ethernet') == -1)
+      continue;
+
+    count++;
+    if (count % 24 == 1 && count > 1)
+      portsdiv.append('<br />');
+
+    var portdiv = $('<div class="port">').attr({
+      'id': 'port-' + sw + ':' + entry.lastoid});
+
+    if (entry.status == 'up') {
+      portdiv.css({'background-color': dhmap.colour.OK});
+      if (parseInt(entry.errors.in) > 1)
+        portdiv.css({'background-color': dhmap.colour.ERRORS});
+      if (parseInt(entry.errors.out) > 1)
+        portdiv.css({'background-color': dhmap.colour.ERRORS});
+      if (entry.trunk && parseInt(entry.speed) < 1000)
+        portdiv.css({'background-color': dhmap.colour.SPEED});
+      if (!entry.trunk && parseInt(entry.speed) < 100)
+        portdiv.css({'background-color': dhmap.colour.SPEED});
+      if (entry.stp == 'error')
+        portdiv.css({'background-color': dhmap.colour.STP});
+    }
+    if (entry.admin != 'up')
+      portdiv.css({'background-color': dhmap.colour.WARNING});
+
+    portdiv.hover(function(entry, ifacename, sw) {
+      var portinfo = $('#portinfo-' + sw);
+      portinfo.html('');
+
+      var table = $('<table>');
+      table.append(
+        $('<tr>').append('<td>Interface:</td><td>' + ifacename + '</td>'));
+      table.append(
+        $('<tr>').append('<td>Status:</td><td>' + entry.status + '</td>'));
+      if (entry.admin != 'up') {
+        table.append($('<tr>').append(
+          '<td colspan="2"><b>Administratively Disabled</b></td>'));
+      }
+      if (entry.status == 'up') {
+        table.append(
+          $('<tr>').append('<td>Spanning Tree:</td><td>' + entry.stp + '</td>'));
+        table.append(
+          $('<tr>').append('<td>Speed:</td><td>' + entry.speed + ' Mbit/s</td>'));
+        table.append(
+          $('<tr>').append(
+            '<td>Errors:</td><td>In: ' + entry.errors.in +
+            ', Out: ' + entry.errors.out + '</td>'));
+      }
+
+      portinfo.append(table);
+      $(this).css({'border-color': 'red'});
+    }.bind(portdiv, entry, ifacename, sw), function() {
+      $(this).css({'border-color': 'black'});
+    }.bind(portdiv));
+    portsdiv.append(portdiv);
+  }
+
+  ports.append(portsdiv);
+}
+
+
 $.getJSON('./data.json', function(objects) {
-  dhmap.init(objects);
+  dhmap.init(objects, click);
 
   function updateStatus() {
     ping = null;
@@ -113,3 +269,15 @@ $.getJSON('./data.json', function(objects) {
   setInterval(updateStatus, 10000);
   updateStatus();
 });
+
+
+// Allow HTML in the dialog title
+$.widget("ui.dialog", $.extend({}, $.ui.dialog.prototype, {
+    _title: function(title) {
+        if (!this.options.title ) {
+            title.html("&#160;");
+        } else {
+            title.html(this.options.title);
+        }
+    }
+}));
