@@ -34,6 +34,9 @@ function checkIfaceSpeed(sw, model, ifaces) {
     if (!iface.trunk && !show_consumer_ifaces)
       continue;
 
+    if (name.indexOf('Ethernet') == -1)
+      continue;
+
     if (iface.status == 'up') {
       if (iface.speed == '10') {
         failed = true;
@@ -60,6 +63,9 @@ function checkIfaceErrors(sw, model, ifaces) {
 
     /* skip access ports if we don't want to show consumer ifaces */
     if (!iface.trunk && !show_consumer_ifaces)
+      continue;
+
+    if (name.indexOf('Ethernet') == -1)
       continue;
 
     if (iface.status == 'up') {
@@ -109,12 +115,12 @@ function computeStatus() {
   for (var sw in ping) {
     if (ping[sw] > 30) {
       switch_status[sw] = 'CRITICAL';
+    } else if (!checkIfaceStp(sw, model[sw], iface[sw])) {
+      switch_status[sw] = 'STP';
     } else if (!checkIfaceSpeed(sw, model[sw], iface[sw])) {
       switch_status[sw] = 'SPEED';
     } else if (!checkIfaceErrors(sw, model[sw], iface[sw])) {
       switch_status[sw] = 'ERRORS';
-    } else if (!checkIfaceStp(sw, model[sw], iface[sw])) {
-      switch_status[sw] = 'STP';
     } else if (snmp[sw] == undefined || snmp[sw].since > 120) {
       switch_status[sw] = 'WARNING';
     } else {
@@ -128,6 +134,8 @@ function computeStatus() {
 }
 
 function click(sw) {
+  if (dialog_open[sw.name])
+    return;
   var title = '';
   var swname = sw.name.split('.')[0];
   title += '<div class="status" id="switch-' + swname + '" ></div>';
@@ -137,10 +145,10 @@ function click(sw) {
   dialog.append($('<div>').attr({'id': 'ports-' + swname}));
   dialog.append($('<br/>'));
   dialog.append($('<div>').attr({'id': 'portinfo-' + swname}));
-  dialog.dialog({width: 500, height: 320, resizable: false,
+  dialog.dialog({width: 500, height: 325, resizable: false,
     close: function() {
       $(this).dialog('destroy').remove()
-      dialog_open[sw.name] = true;
+      dialog_open[sw.name] = false;
     }});
 
   dialog_open[sw.name] = true;
