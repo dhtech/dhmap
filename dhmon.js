@@ -121,7 +121,7 @@ function computeStatus() {
       switch_status[sw] = 'SPEED';
     } else if (!checkIfaceErrors(sw, model[sw], iface[sw])) {
       switch_status[sw] = 'ERRORS';
-    } else if (snmp[sw] == undefined || snmp[sw].since > 120) {
+    } else if (snmp[sw] == undefined || snmp[sw].since > 240) {
       switch_status[sw] = 'WARNING';
     } else {
       switch_status[sw] = 'OK';
