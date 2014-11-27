@@ -11,12 +11,21 @@ function checkIfaceSpeed(sw, model, ifaces) {
     return true;
 
   var failed = false;
-  for (var idx in ifaces) {
-    var iface = ifaces[idx];
-    var name = window.atob(iface.interface.split(':')[1]);
+  var show_consumer_ifaces =
+    document.getElementById('hilight_consumer_issues').checked;
+  for (var encoded_name in ifaces) {
+    var iface = ifaces[encoded_name];
+    var name = window.atob(encoded_name.split(':')[1]);
+
+    /* skip access ports if we don't want to show consumer ifaces */
+    if (!iface.trunk && !show_consumer_ifaces)
+      continue;
+
     if (iface.status == 'up') {
       if (iface.speed == '10') {
         failed = true;
+        if (sw.indexOf('b09-b') != -1)
+          console.log(name + ' is 10 Mbit/s');
       } else if (iface.speed == '100') {
         if (name.indexOf('GigabitEthernet') != -1) {
           failed = true;
@@ -26,6 +35,32 @@ function checkIfaceSpeed(sw, model, ifaces) {
   }
   return !failed;
 }
+
+function checkIfaceErrors(sw, model, ifaces) {
+  if (model == undefined || ifaces == undefined)
+    return true;
+
+  var failed = false;
+  var show_consumer_ifaces =
+    document.getElementById('hilight_consumer_issues').checked;
+  for (var encoded_name in ifaces) {
+    var iface = ifaces[encoded_name];
+    var name = window.atob(encoded_name.split(':')[1]);
+
+    /* skip access ports if we don't want to show consumer ifaces */
+    if (!iface.trunk && !show_consumer_ifaces)
+      continue;
+
+    if (iface.status == 'up') {
+      if (iface.errors.in > 1 || iface.errors.out > 1) {
+        failed = true;
+      }
+    }
+  }
+  return !failed;
+}
+
+
 
 function computeStatus() {
   if (iface == null || model == null || snmp == null || ping == null)
@@ -38,6 +73,8 @@ function computeStatus() {
       switch_status[sw] = false;
     } else if (!checkIfaceSpeed(sw, model[sw], iface[sw])) {
       switch_status[sw] = 'S';
+    } else if (!checkIfaceErrors(sw, model[sw], iface[sw])) {
+      switch_status[sw] = 'E';
     } else if (snmp[sw] == undefined || snmp[sw].since > 120) {
       switch_status[sw] = '!';
     } else {

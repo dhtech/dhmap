@@ -46,14 +46,23 @@ body {
   margin-top: 5px;
   margin-right: 5px;
 }
+
+body {
+  font-family: arial;
+  color: #cacaca;
+}
     </style>
   </head>
   <body>
     <div id="header">
       <h1>dhmap</h1>
+      Hilight:
+      <input type="checkbox" id="hilight_consumer_issues" onchange="computeStatus()" />
+      <label for="hilight_consumer_issues">Consumer Issues</label>
       <span id="search"><input onclick="alert('TODO etc.');" type="text" value="Search ..." /></span>
     </div>
-    <div id="menu"></div>
+    <div id="menu">
+    </div>
     <div id="canvas"></div>
   </body>
 </html>

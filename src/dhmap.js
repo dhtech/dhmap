@@ -23,6 +23,7 @@ var dhmap = {};
     'CRITICAL':'rgb(255,0,0)',
     'WARNING': 'rgb(255,191,0)',
     'SPEED':   'rgb(223,0,255)',
+    'ERRORS':  'rgb(0,255,255)',
     'UNKNOWN': 'rgb(112,112,112)',
     'TABLE':   'rgb(242,242,242)'
   };
@@ -123,6 +124,8 @@ var dhmap = {};
                   setSwitchColor(name, COLOUR.OK);
               } else if ( statuses[name] == 'S' ) {
                   setSwitchColor(name, COLOUR.SPEED);
+              } else if ( statuses[name] == 'E' ) {
+                  setSwitchColor(name, COLOUR.ERRORS);
               } else if ( statuses[name] == '!' ) {
                   setSwitchColor(name, COLOUR.WARNING);
               } else {
