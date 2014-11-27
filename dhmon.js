@@ -5,6 +5,8 @@ var ping = null;
 var snmp = null;
 var model = null;
 var iface = null;
+var switch_vlans = null;
+var dhcp_status = null;
 
 var errors_to_human = {
   'OK': 'Everything working as expected',
@@ -140,12 +142,13 @@ function click(sw) {
   var swname = sw.name.split('.')[0];
   title += '<div class="status" id="switch-' + swname + '" ></div>';
   title += swname.toUpperCase();
-  var dialog = $('<div>').attr({'title': title});
+  var dialog = $('<div class="switchdialog">').attr({'title': title});
   dialog.append($('<span>').attr({'id': 'info-' + swname}));
+  dialog.append($('<div>').attr({'id': 'dhcpinfo-' + swname}));
   dialog.append($('<div>').attr({'id': 'ports-' + swname}));
   dialog.append($('<br/>'));
   dialog.append($('<div>').attr({'id': 'portinfo-' + swname}));
-  dialog.dialog({width: 500, height: 325, resizable: false,
+  dialog.dialog({width: 500, height: 375, resizable: false,
     close: function() {
       $(this).dialog('destroy').remove()
       dialog_open[sw.name] = false;
@@ -164,8 +167,30 @@ function updateSwitchDialog(sw, fqdn) {
   var info = $('#info-' + sw);
   info.html('<p>Status: ' + errors_to_human[switch_status[fqdn]] + '</p>');
 
+  var dhcpinfo = $('#dhcpinfo-' + sw);
+  dhcpinfo.html('');
+  var dhcptable = $('<table width="300px">');
+  dhcptable.append(
+      '<tr><th>Network</th><th>Clients</th><th>Max</th><th>Utilization</th>');
+  for (var vlan in switch_vlans[fqdn]) {
+    // Grab the first network with the same VLAN
+    for (var network in dhcp_status) {
+      var ds = dhcp_status[network];
+      if (ds.vlan == vlan) {
+        console.log(ds);
+        dhcptable.append(
+            $('<tr>')
+            .append($('<td>').text(network))
+            .append($('<td>').text(ds.usage))
+            .append($('<td>').text(ds.max))
+            .append($('<td>').text(Math.ceil(ds.usage / ds.max * 100) + '%')))
+      }
+    }
+  }
+  dhcpinfo.append(dhcptable);
+
   var ports = $('#ports-' + sw);
-  ports.html('');
+  ports.html('<hr/>');
 
   var portsdiv = $('<div>');
 
@@ -216,9 +241,10 @@ function updateSwitchDialog(sw, fqdn) {
       var portinfo = $('#portinfo-' + sw);
       portinfo.html('');
 
-      var table = $('<table>');
+      var table = $('<table width="90%">');
       table.append(
-        $('<tr>').append('<td>Interface:</td><td>' + ifacename + '</td>'));
+        $('<tr>').append('<td style="width: 150px">Interface:</td><td>'
+          + ifacename + '</td>'));
       table.append(
         $('<tr>').append('<td>Status:</td><td>' + entry.status + '</td>'));
       if (entry.admin != 'up') {
@@ -271,6 +297,14 @@ $.getJSON('./data.json', function(objects) {
     });
     $.getJSON('/analytics/switch.interfaces', function(objects) {
       iface = objects;
+      computeStatus();
+    });
+    $.getJSON('/analytics/dhcp.status', function(objects) {
+      dhcp_status = objects;
+      computeStatus();
+    });
+    $.getJSON('/analytics/switch.vlans', function(objects) {
+      switch_vlans = objects;
       computeStatus();
     });
   }
