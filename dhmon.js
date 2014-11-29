@@ -26,14 +26,15 @@ function checkIfaceSpeed(sw, model, ifaces) {
     return true;
 
   var failed = false;
-  var show_consumer_ifaces =
-    document.getElementById('hilight_consumer_issues').checked;
   for (var encoded_name in ifaces) {
     var iface = ifaces[encoded_name];
+    /* TODO(bluecmd): remove and do this in the server instead */
+    if (encoded_name == "undefined")
+      continue;
     var name = window.atob(encoded_name.split(':')[1]);
 
     /* skip access ports if we don't want to show consumer ifaces */
-    if (!iface.trunk && !show_consumer_ifaces)
+    if (!iface.trunk)
       continue;
 
     if (name.indexOf('Ethernet') == -1)
@@ -61,6 +62,9 @@ function checkIfaceErrors(sw, model, ifaces) {
     document.getElementById('hilight_consumer_issues').checked;
   for (var encoded_name in ifaces) {
     var iface = ifaces[encoded_name];
+    /* TODO(bluecmd): remove and do this in the server instead */
+    if (encoded_name == "undefined")
+      continue;
     var name = window.atob(encoded_name.split(':')[1]);
 
     /* skip access ports if we don't want to show consumer ifaces */
@@ -88,6 +92,9 @@ function checkIfaceStp(sw, model, ifaces) {
     document.getElementById('hilight_consumer_issues').checked;
   for (var encoded_name in ifaces) {
     var iface = ifaces[encoded_name];
+    /* TODO(bluecmd): remove and do this in the server instead */
+    if (encoded_name == "undefined")
+      continue;
     var name = window.atob(encoded_name.split(':')[1]);
 
     /* skip access ports if we don't want to show consumer ifaces */
@@ -123,7 +130,8 @@ function computeStatus() {
       switch_status[sw] = 'SPEED';
     } else if (!checkIfaceErrors(sw, model[sw], iface[sw])) {
       switch_status[sw] = 'ERRORS';
-    } else if (snmp[sw] == undefined || snmp[sw].since > 240) {
+    // TODO: use memcache for this instead
+    } else if (snmp[sw] == undefined || snmp[sw].since > 360) {
       switch_status[sw] = 'WARNING';
     } else {
       switch_status[sw] = 'OK';
