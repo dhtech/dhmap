@@ -26,13 +26,7 @@ function checkIfaceSpeed(sw, model, ifaces) {
     return true;
 
   var failed = false;
-  for (var encoded_name in ifaces) {
-    var iface = ifaces[encoded_name];
-    /* TODO(bluecmd): remove and do this in the server instead */
-    if (encoded_name == "undefined")
-      continue;
-    var name = window.atob(encoded_name.split(':')[1]);
-
+  for (var name in ifaces) {
     /* skip access ports if we don't want to show consumer ifaces */
     if (!iface.trunk)
       continue;
@@ -60,12 +54,8 @@ function checkIfaceErrors(sw, model, ifaces) {
   var failed = false;
   var show_consumer_ifaces =
     document.getElementById('hilight_consumer_issues').checked;
-  for (var encoded_name in ifaces) {
-    var iface = ifaces[encoded_name];
-    /* TODO(bluecmd): remove and do this in the server instead */
-    if (encoded_name == "undefined")
-      continue;
-    var name = window.atob(encoded_name.split(':')[1]);
+  for (var name in ifaces) {
+    var iface = ifaces[name];
 
     /* skip access ports if we don't want to show consumer ifaces */
     if (!iface.trunk && !show_consumer_ifaces)
@@ -75,7 +65,7 @@ function checkIfaceErrors(sw, model, ifaces) {
       continue;
 
     if (iface.status == 'up') {
-      if (iface.errors.in > 1 || iface.errors.out > 1) {
+      if (iface.errors_in > 1 || iface.errors_out > 1) {
         failed = true;
       }
     }
@@ -90,13 +80,8 @@ function checkIfaceStp(sw, model, ifaces) {
   var failed = false;
   var show_consumer_ifaces =
     document.getElementById('hilight_consumer_issues').checked;
-  for (var encoded_name in ifaces) {
-    var iface = ifaces[encoded_name];
-    /* TODO(bluecmd): remove and do this in the server instead */
-    if (encoded_name == "undefined")
-      continue;
-    var name = window.atob(encoded_name.split(':')[1]);
-
+  for (var name in ifaces) {
+    var iface = ifaces[name];
     /* skip access ports if we don't want to show consumer ifaces */
     if (!iface.trunk && !show_consumer_ifaces)
       continue;
@@ -216,7 +201,7 @@ function updateSwitchDialog(sw, fqdn) {
   for (var kidx in key_order) {
     var idx = order[key_order[kidx]];
     var entry = iface[fqdn][idx];
-    var ifacename = window.atob(idx.split(':')[1]);
+    var ifacename = idx;
 
     /* Skip special interfaces */
     if (ifacename.indexOf('Ethernet') == -1)
@@ -231,9 +216,9 @@ function updateSwitchDialog(sw, fqdn) {
 
     if (entry.status == 'up') {
       portdiv.css({'background-color': dhmap.colour.OK});
-      if (parseInt(entry.errors.in) > 1)
+      if (parseInt(entry.errors_in) > 1)
         portdiv.css({'background-color': dhmap.colour.ERRORS});
-      if (parseInt(entry.errors.out) > 1)
+      if (parseInt(entry.errors_out) > 1)
         portdiv.css({'background-color': dhmap.colour.ERRORS});
       if (entry.trunk && parseInt(entry.speed) < 1000)
         portdiv.css({'background-color': dhmap.colour.SPEED});
@@ -269,8 +254,8 @@ function updateSwitchDialog(sw, fqdn) {
           $('<tr>').append('<td>Speed:</td><td>' + entry.speed + ' Mbit/s</td>'));
         table.append(
           $('<tr>').append(
-            '<td>Errors:</td><td>In: ' + entry.errors.in +
-            ', Out: ' + entry.errors.out + '</td>'));
+            '<td>Errors:</td><td>In: ' + entry.errors_in +
+            ', Out: ' + entry.errors_out + '</td>'));
       }
 
       portinfo.append(table);
@@ -289,11 +274,6 @@ $.getJSON('./data.json', function(objects) {
   dhmap.init(objects, click);
 
   function updateStatus() {
-    ping = null;
-    snmp = null;
-    model = null;
-    iface = null;
-
     $.getJSON('/analytics/ping.status', function(objects) {
       ping = objects;
       computeStatus();
