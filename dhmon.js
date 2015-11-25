@@ -27,6 +27,7 @@ function checkIfaceSpeed(sw, model, ifaces) {
 
   var failed = false;
   for (var name in ifaces) {
+    var iface = ifaces[name];
     /* skip access ports if we don't want to show consumer ifaces */
     if (!iface.trunk)
       continue;
