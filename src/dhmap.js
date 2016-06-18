@@ -136,15 +136,30 @@ var dhmap = {};
     var header = document.getElementById('header');
     canvas.innerHTML = '';
     canvas.style.marginLeft = menu.clientWidth;
-    canvas.style.width = window.innerWidth - menu.clientWidth - 2;
-    canvas.style.height = window.innerHeight - header.clientHeight - 2;
+
+    // TODO(bluecmd): Calculate these automatically
+    var width = window.innerWidth - menu.clientWidth - 2;
+    var height = window.innerHeight - header.clientHeight - 2;
+
+    if (width < 2000) {
+      width = 2000;
+    }
+    if (height < 800) {
+      height = 800;
+    }
+
+    canvas.style.width = width;
+    canvas.style.height = height;
+
     menu.style.height = window.innerHeight - header.clientHeight;
     paper = Raphael(canvas);
     var zpd = new RaphaelZPD(paper, { zoom: true, pan: true, drag: false });
+    zpd.gelem.setAttribute('transform', 'matrix(0.4214982092380523,0,0,0.4214982092380523,56.18161920675628,33.90790739210934)');
 
     onclick = click_callback;
     switches = {};
     canvasObjects = {};
+
     offsetX = 0;
     offsetY = 0;
 
