@@ -100,16 +100,9 @@ var dhmap = {};
 
   // Update colour of previously drawn switch
   function setSwitchColor(name, color) {
-      canvasObjects[name].animate(
-        {"fill-opacity": 0.1},
-        500,
-        "linear"
-      ).animate(
-        {"fill": color},
-        200
-      ).animate(
-        {"fill-opacity": 1.0},
-        500);
+      if (canvasObjects[name].attrs.fill != color) {
+          canvasObjects[name].attr({"fill": color})
+      }
   }
 
   // Update the status of all switches previously drawn on screen

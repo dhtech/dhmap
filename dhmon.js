@@ -7,6 +7,7 @@ var model = null;
 var iface = null;
 var switch_vlans = null;
 var dhcp_status = null;
+var start_fetch = null;
 
 var errors_to_human = {
   'OK': 'Everything working as expected',
@@ -105,6 +106,11 @@ function computeStatus() {
   if (iface == null || model == null || snmp == null || ping == null)
     return;
 
+  var now = new Date();
+  var latency = now - start_fetch;
+  console.log(
+      '[' + now.toLocaleString() + '] Loaded new data in ' + latency + 'ms');
+
   switch_status = {};
 
   for (var sw in ping) {
@@ -116,7 +122,6 @@ function computeStatus() {
       switch_status[sw] = 'SPEED';
     } else if (!checkIfaceErrors(sw, model[sw], iface[sw])) {
       switch_status[sw] = 'ERRORS';
-    // TODO: use memcache for this instead
     } else if (snmp[sw] == undefined || snmp[sw].since > 360) {
       switch_status[sw] = 'WARNING';
     } else {
@@ -171,7 +176,6 @@ function updateSwitchDialog(sw, fqdn) {
     for (var network in dhcp_status) {
       var ds = dhcp_status[network];
       if (ds.vlan == vlan) {
-        console.log(ds);
         dhcptable.append(
             $('<tr>')
             .append($('<td>').text(network))
@@ -275,28 +279,27 @@ $.getJSON('./data.json', function(objects) {
   dhmap.init(objects, click);
 
   function updateStatus() {
-    $.getJSON('/analytics/ping.status', function(objects) {
-      ping = objects;
-      computeStatus();
-    });
-    $.getJSON('/analytics/snmp.saves', function(objects) {
-      snmp = objects;
-      computeStatus();
-    });
-    $.getJSON('/analytics/switch.model', function(objects) {
-      model = objects;
-      computeStatus();
-    });
-    $.getJSON('/analytics/switch.interfaces', function(objects) {
-      iface = objects;
-      computeStatus();
-    });
-    $.getJSON('/analytics/dhcp.status', function(objects) {
-      dhcp_status = objects;
-      computeStatus();
-    });
-    $.getJSON('/analytics/switch.vlans', function(objects) {
-      switch_vlans = objects;
+    start_fetch = new Date();
+    $.when(
+      $.getJSON('/analytics/ping.status', function(objects) {
+        ping = objects;
+      }),
+      $.getJSON('/analytics/snmp.saves', function(objects) {
+        snmp = objects;
+      }),
+      $.getJSON('/analytics/switch.model', function(objects) {
+        model = objects;
+      }),
+      $.getJSON('/analytics/switch.interfaces', function(objects) {
+        iface = objects;
+      }),
+      $.getJSON('/analytics/dhcp.status', function(objects) {
+        dhcp_status = objects;
+      }),
+      $.getJSON('/analytics/switch.vlans', function(objects) {
+        switch_vlans = objects;
+      })
+    ).then(function() {
       computeStatus();
     });
   }
