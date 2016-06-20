@@ -66,7 +66,7 @@ function checkIfaceErrors(sw, model, ifaces) {
       continue;
 
     if (iface.status == 'up') {
-      if (iface.errors_in > 1 || iface.errors_out > 1) {
+      if (iface.errors_in > 0 || iface.errors_out > 0) {
         failed = true;
       }
     }
@@ -217,9 +217,9 @@ function updateSwitchDialog(sw, fqdn) {
 
     if (entry.status == 'up') {
       portdiv.css({'background-color': dhmap.colour.OK});
-      if (parseInt(entry.errors_in) > 1)
+      if (parseFloat(entry.errors_in) > 0)
         portdiv.css({'background-color': dhmap.colour.ERRORS});
-      if (parseInt(entry.errors_out) > 1)
+      if (parseFloat(entry.errors_out) > 0)
         portdiv.css({'background-color': dhmap.colour.ERRORS});
       if (entry.trunk && parseInt(entry.speed) < 1000)
         portdiv.css({'background-color': dhmap.colour.SPEED});
@@ -255,8 +255,8 @@ function updateSwitchDialog(sw, fqdn) {
           $('<tr>').append('<td>Speed:</td><td>' + entry.speed + ' Mbit/s</td>'));
         table.append(
           $('<tr>').append(
-            '<td>Errors:</td><td>In: ' + entry.errors_in +
-            ', Out: ' + entry.errors_out + '</td>'));
+            '<td>Errors:</td><td>In: ' + Math.ceil(entry.errors_in*100)/100 +
+            ', Out: ' + Math.ceil(entry.errors_out*100)/100 + '</td>'));
       }
 
       portinfo.append(table);
