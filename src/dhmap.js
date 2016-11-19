@@ -28,11 +28,11 @@ var dhmap = {};
     'STP':     'rgb(0,102,153)',
     'ERRORS':  'rgb(0,255,255)',
     'UNKNOWN': 'rgb(112,112,112)',
-    'TABLE':   'rgb(242,242,242)'
+    'TABLE':   'rgba(242,242,242, 0.5)'
   };
 
   // Draw a rectangle and save a reference to the object
-  function renderRectangle(object, fillColor, isTable) {
+  function renderRectangle(object, fillColor, isTable, dry) {
       // Whether the object is horizontal or not, determines whether to swap
       // width/height to conform with RaphaelJS drawing
       var width = object.horizontal == 1 ? object.width : object.height;
@@ -47,6 +47,10 @@ var dhmap = {};
       height = height * scaling;
       var x1 = (offsetX + object.x1) * scaling;
       var y1 = (offsetY + object.y1) * scaling;
+
+      if (dry) {
+        return;
+      }
 
       // Create the rectangle and fill it
       var rectangle = paper.rect(x1, y1, width, height);
@@ -88,14 +92,14 @@ var dhmap = {};
   }
 
   // Draw a network switch. Defaults to amber colour
-  function renderSwitch(object) {
+  function renderSwitch(object, dry) {
       switches[object.name] = object;
-      renderRectangle(object, dhmap.colour.UNKNOWN, false);
+      renderRectangle(object, dhmap.colour.UNKNOWN, false, dry);
   }
 
   // Draw a table
-  function renderTable(object) {
-      renderRectangle(object, dhmap.colour.TABLE, true);
+  function renderTable(object, dry) {
+      renderRectangle(object, dhmap.colour.TABLE, true, dry);
   }
 
   // Update colour of previously drawn switch
@@ -121,7 +125,7 @@ var dhmap = {};
   }
 
   // Which render method to use for each object type
-  var renders= { 'switch': renderSwitch, 'table': renderTable };
+  var renders = { 'switch': renderSwitch, 'table': renderTable };
 
   dhmap.init = function(objects, click_callback) {
     var canvas = document.getElementById('canvas');
@@ -156,17 +160,44 @@ var dhmap = {};
     offsetX = 0;
     offsetY = 0;
 
+    var halls = Object.keys(objects).length;
+    var hallidx = 0;
     for ( var hall in objects ) {
 
       // Calculate new bounding box for this hall
+      // First run is a dry run for just calculating the bounding boxes
       boundingX = 0;
       boundingY = 0;
 
       for ( var i in objects[hall] ) {
-        renders[objects[hall][i]['class']](objects[hall][i]);
+        renders[objects[hall][i]['class']](objects[hall][i], true);
       }
 
-      offsetX += boundingX + 20;
+      var hue = (hallidx/halls) * 360;
+      console.log("hue " + hue);
+
+      var hallRect = paper.rect(
+          (offsetX - 15) * scaling,
+          (offsetY - 15) * scaling,
+          (boundingX + 30) * scaling,
+          (boundingY + 30) * scaling);
+      var labelOffsetX = (boundingX + 30) * scaling / 2;
+      var labelOffsetY = -100;
+      hallRect.attr({fill: 'hsla(' + hue + ',100%,50%,0.3)'});
+      hallRect.label = paper.text(hallRect.attr('x') + labelOffsetX, hallRect.attr('y') + labelOffsetY, hall);
+      hallRect.label.attr({'font-size': 144});
+      hallRect.label.attr({'border': '1px solid red'});
+      hallRect.label.attr({'fill': 'rgba(200, 200, 200, 0.7)'});
+
+      // Re-do with real paint this time
+      boundingX = 0;
+      boundingY = 0;
+      for ( var i in objects[hall] ) {
+        renders[objects[hall][i]['class']](objects[hall][i], false);
+      }
+
+      offsetX += boundingX + 40;
+      hallidx++;
     }
   }
 
