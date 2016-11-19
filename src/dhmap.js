@@ -20,6 +20,8 @@ var dhmap = {};
   var boundingY = 0;
   var onclick = null;
 
+  var defaultMatrix = 'matrix(0.40473940968513483,0,0,0.40473940968513483,77.97065002983072,118.90358368190753)';
+
   dhmap.colour = {
     'OK':      'rgb(137,245,108)',
     'CRITICAL':'rgb(255,0,0)',
@@ -151,7 +153,7 @@ var dhmap = {};
     menu.style.height = window.innerHeight - header.clientHeight;
     paper = Raphael(canvas);
     var zpd = new RaphaelZPD(paper, { zoom: true, pan: true, drag: false });
-    zpd.gelem.setAttribute('transform', 'matrix(0.4214982092380523,0,0,0.4214982092380523,56.18161920675628,33.90790739210934)');
+    zpd.gelem.setAttribute('transform', defaultMatrix);
 
     onclick = click_callback;
     switches = {};
@@ -160,8 +162,11 @@ var dhmap = {};
     offsetX = 0;
     offsetY = 0;
 
-    var halls = Object.keys(objects).length;
-    var hallidx = 0;
+    // First pass: Calculate hall sizes.
+    // This is to have a simple heuristic to group small halls together.
+
+    var hallsizes = {};
+    var hallsizelist = [];
     for ( var hall in objects ) {
 
       // Calculate new bounding box for this hall
@@ -173,15 +178,80 @@ var dhmap = {};
         renders[objects[hall][i]['class']](objects[hall][i], true);
       }
 
+      hallsizes[hall] = {
+        'x': offsetX,
+        'y': offsetY,
+        'w': boundingX,
+        'h': boundingY,
+      };
+
+      hallsizelist.push([boundingY * boundingX, hall]);
+    }
+
+    // Second phase: Figure out hall order.
+    hallsizelist.sort(function(a, b) { return a[0] - b[0]; });
+    hallsizelist.reverse();
+
+    var hallorder = [];
+    for ( var i in hallsizelist ) {
+      hallorder.push(hallsizelist[i][1]);
+    }
+
+    // Third pass: Order halls in size order.
+    // Try to compact halls if possible.
+    var maxHallHeight = hallsizes[hallorder[0]].h;
+    var maxX = 0;
+    var padY = 100;
+    var padX = 100;
+    for ( var j in hallorder ) {
+      var hall = hallorder[j];
+
+      boundingX = 0;
+      boundingY = 0;
+
+      for ( var i in objects[hall] ) {
+        renders[objects[hall][i]['class']](objects[hall][i], true);
+      }
+
+      hallsizes[hall] = {
+        'x': offsetX,
+        'y': offsetY,
+        'w': boundingX,
+        'h': boundingY,
+      };
+
+      if (maxX < offsetX + boundingX + padX) {
+        maxX = offsetX + boundingX + padX;
+      }
+
+      // Look ahead and see where if we can squeeze the hall in below this one.
+      var nj = parseInt(j) + 1;
+      if (nj < hallorder.length) {
+        var nextHall = hallorder[nj];
+        if ((hallsizes[hall].y + hallsizes[hall].h + padY + hallsizes[nextHall].h) < maxHallHeight) {
+          offsetY += boundingY + padY;
+        } else {
+          offsetY = 0;
+          offsetX = maxX;
+        }
+      }
+    }
+
+    // Fourth phase: draw bounding boxes of halls.
+    var halls = Object.keys(objects).length;
+    var hallidx = 0;
+    for ( var i in hallorder ) {
+      var hall = hallorder[i];
       var hue = (hallidx/halls) * 360;
-      console.log("hue " + hue);
+
+      var size = hallsizes[hall];
 
       var hallRect = paper.rect(
-          (offsetX - 15) * scaling,
-          (offsetY - 15) * scaling,
-          (boundingX + 30) * scaling,
-          (boundingY + 30) * scaling);
-      var labelOffsetX = (boundingX + 30) * scaling / 2;
+          (size.x - 15) * scaling,
+          (size.y - 15) * scaling,
+          (size.w + 30) * scaling,
+          (size.h + 30) * scaling);
+      var labelOffsetX = (size.w + 30) * scaling / 2;
       var labelOffsetY = -100;
       hallRect.attr({fill: 'hsla(' + hue + ',100%,50%,0.3)'});
       hallRect.label = paper.text(hallRect.attr('x') + labelOffsetX, hallRect.attr('y') + labelOffsetY, hall);
@@ -189,15 +259,21 @@ var dhmap = {};
       hallRect.label.attr({'border': '1px solid red'});
       hallRect.label.attr({'fill': 'rgba(200, 200, 200, 0.7)'});
 
+      hallidx++;
+    }
+
+    // Fifth phase: draw objects.
+    for ( var i in hallorder ) {
+      var hall = hallorder[i];
+      offsetX = hallsizes[hall].x;
+      offsetY = hallsizes[hall].y;
+
       // Re-do with real paint this time
       boundingX = 0;
       boundingY = 0;
       for ( var i in objects[hall] ) {
         renders[objects[hall][i]['class']](objects[hall][i], false);
       }
-
-      offsetX += boundingX + 40;
-      hallidx++;
     }
   }
 
