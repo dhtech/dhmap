@@ -53,36 +53,65 @@ var dhmap = {};
       if (dry) {
         return;
       }
-
+ 
       // Create the rectangle and fill it
       var rectangle = paper.rect(x1, y1, width, height);
       rectangle.attr({fill: fillColor});
 
-      // Add a label
-      if (isTable) {
-        var labelOffsetX = 12;
-        var labelOffsetY = 12;
-      } else {
-        var labelOffsetX = 12;
-        var labelOffsetY = 40;
-      }
-
       var shortName = object.name.split('.')[0].toUpperCase();
-      rectangle.label = paper.text(rectangle.attr('x') + labelOffsetX, rectangle.attr('y') + labelOffsetY, shortName);
-      if (!isTable) {
-        rectangle.label.attr({"font-size": 16});
+	  
+      // Table
+      if (isTable) {
+        // Add a label
+        if(object.horizontal == 0){
+          var labelOffsetX = 11;
+          var labelOffsetY = 23;
+        }
+        else {
+          var labelOffsetX = 23;
+          var labelOffsetY = 13;
+        }
+        rectangle.label = paper.text(rectangle.attr('x') + labelOffsetX, rectangle.attr('y') + labelOffsetY, shortName);
+        rectangle.label.attr({"font-size": 22});
+        if(object.horizontal == 0 && isTable) {
+          rectangle.label.rotate(90);
+        }
+      }
+      
+      // Device
+      else {
+        // Add a label
+        var labelOffsetX = 5;
+        var labelOffsetY = -37;
+        rectangle.labelbox = paper.rect(
+          rectangle.attr('x') + labelOffsetX, 
+          rectangle.attr('y') + labelOffsetY,
+          width+50,
+          width+10);
+        rectangle.labelbox.attr({fill: "#fff"});
+        rectangle.labelbox.label = paper.text(
+          rectangle.attr('x') + labelOffsetX + 38, 
+          rectangle.attr('y') + labelOffsetY + 20, 
+          shortName);
+        rectangle.labelbox.label.attr({"font-size": 22});
       }
 
       // For some objects it might be desirable to hide the label.
       // For those objects we add a mouse over to display it.
       if ( ! isTable ) {
-        rectangle.label.hide();
+        rectangle.labelbox.hide();
+        rectangle.labelbox.label.hide();
         rectangle.mouseover(function() {
-            this.animate({"fill-opacity": 0.8}, 500);
-            this.label.show();
+            this.labelbox.show();
+            this.labelbox.label.show();
+			this.labelbox.toFront();
+			this.labelbox.label.toFront();
+			this.attr({"cursor": "pointer"});
         });
         rectangle.mouseout(function() {
-            this.label.hide();
+            this.labelbox.hide();
+            this.labelbox.label.hide();
+			this.attr({"cursor": "default"});
         });
         rectangle.click(function() {
           onclick(object);
@@ -93,11 +122,15 @@ var dhmap = {};
       canvasObjects[object.name] = rectangle;
   }
 
-  // Draw a network switch. Defaults to amber colour
-  function renderSwitch(object, dry) {
-      switches[object.name] = object;
-      renderRectangle(object, dhmap.colour.UNKNOWN, false, dry);
-  }
+	// Draw a network switch. Defaults to amber colour
+	function renderSwitch(object, dry) {
+		object.width = object.width + 1.7;
+		object.height = object.height + 1.7;
+		object.x1 = object.x1 - 1;
+		object.y1 = object.y1 - 0.7;
+		switches[object.name] = object;
+		renderRectangle(object, dhmap.colour.UNKNOWN, false, dry);
+	}
 
   // Draw a table
   function renderTable(object, dry) {
