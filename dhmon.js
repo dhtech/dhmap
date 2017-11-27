@@ -132,6 +132,7 @@ function computeStatus() {
       updateSwitchDialog(swname, sw);
   }
   dhmap.updateSwitches(switch_status);
+  dhmenu.updateStatuses(switch_status);
 }
 
 function click(sw) {
@@ -159,7 +160,7 @@ function click(sw) {
 
 function updateSwitchDialog(sw, fqdn) {
   var div = $('#switch-' + sw);
-  if (div == undefined || iface[fqdn] == undefined)
+  if (div == undefined || !iface || iface[fqdn] == undefined)
     return
   div.css({'background-color': dhmap.colour[switch_status[fqdn]]});
 
@@ -277,6 +278,7 @@ function updateSwitchDialog(sw, fqdn) {
 
 $.getJSON('./data.json', function(objects) {
   dhmap.init(objects, click);
+  dhmenu.init(objects, click);
 
   function updateStatus() {
     start_fetch = new Date();
