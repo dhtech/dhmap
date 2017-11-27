@@ -57,13 +57,18 @@ th {
   background-color: white;
   height: 36px;
   color: #cacaca;
+  border-bottom: 1px solid #dddddd;
 }
 
+#menu_container {
+  float: left;
+}
 #menu {
   background-color: white;
   height: 90%;
   width: 100px;
   float: left;
+  clear: left;
 }
 #menu ul{
 	list-style-type: none;
@@ -85,7 +90,6 @@ th {
 }
 #menu li > ul > li{
 	background-color:#ddd;
-  //padding-bottom: 3px;
 }
 #menu li > ul > li > a {
   display: block;
@@ -94,10 +98,27 @@ th {
   text-decoration: none;
 	border-bottom-color: #999;
 }
+#menu_button{
+  display: none;
+  color: #000;
+  text-decoration: none;
+  padding: 5px 10px;
+  font-size:15px;
+  border: 1px solid #ddd;
+}
+@media screen and (max-width: 600px) {
+  #menu {
+    display: none;
+    width: 100%
+  }
+  #menu_button{
+    display: block;
+  }
+}
 
 #canvas {
   border-left: 1px solid #dddddd;
-  border-top: 1px solid #dddddd;
+  //border-top: 1px solid #dddddd;
   height: 90%;
   width: 90%;
 }
@@ -121,6 +142,7 @@ body {
       <label for="hilight_consumer_issues">Consumer Issues</label>
       <span id="search"><input id="search_menu" onClick="this.select();" onkeydown = "if (event.keyCode == 13){dhmenu.filter($(this).val())}" type="text" placeholder="Search..." /></span>
     </div>
+    <div style="float: left;"><a id="menu_button" href="javascript:void(0);" onClick="dhmenu.hideShowMenu();">&#9776;</a></div>
     <div id="menu">
     </div>
     <div id="canvas"></div>

@@ -8,6 +8,14 @@ dhmenu.init = function(objects, click_callback) {
   dhmenu.write(objects);
 }
 
+dhmenu.hideShowMenu = function(){
+  if($("#menu").is(":visible")){
+    $("#menu").hide();
+  } else {
+    $("#menu").show();
+  }
+}
+
 // Write menu
 dhmenu.write = function(objects){
   if($('#menu')){
@@ -75,46 +83,20 @@ dhmenu.filter = function(searchFor = "", filterWarnings){
     // Hide all switches
     $('#menu > ul > li > ul > li').hide();
     
-    // Show switch
+    // Expand switches
+    $('#menu > ul > li > ul').show();
+    
+    // Show searched switches
     searchFor = "menu_switch_"+searchFor;
     $('li[id^=' + searchFor + ']' ).show();
     
+    // Show menu
+    $('#menu').show();
   }
-  /*if(filterWarnings === undefined)
-    filterWarnings = true;
-  this.filterWarnings = filterWarnings;
-  if($('#menu_hall_list')){
-    
-    // Unfold all halls
-    $('#menu_hall_list > li > ul').show();
-    
-    // Unhide all switches
-    $('#menu_hall_list > li > ul > li').show();
-    
-    // Hide all but searched for
-    if(searchFor){
-      $('#menu_hall_list > li > a').each(function(){
-        // Fold hall
-        if($(this).text() != searchFor.substr(0,1)){
-          $(this).siblings().find('li').hide();
-          hallsFoldedState[$(this).text()] = true;
-        }
-        else{
-          hallsFoldedState[$(this).text()] = false;
-          $(this).siblings().find('li').each(function(){
-            // Fold switch
-            if($(this).find('a').text().substr(0,searchFor.length) != searchFor){
-              $(this).hide();
-            }
-          });
-        }
-      });
-    }
-    // Hide OK switches
-    else if (filterWarnings){
-      $('#menu_hall_list li[data-status="OK"]').hide();
-    }
-  }*/
+  else{
+    // Show all switches
+    $('#menu > ul > li > ul > li').show();
+  }
 }
 
   // Expand or fold hall
