@@ -72,10 +72,10 @@ dhmenu.write = function(objects){
   }
   
   // Test
-  dhmenu.testStatuses(objects);
+  //dhmenu.testStatuses(objects);
   
   // Filter menu
-  dhmenu.filter();
+  //dhmenu.filter();
 }
 
 // Set colors in menu
