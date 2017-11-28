@@ -19,10 +19,17 @@ dhmenu.hideShowMenu = function(){
 // Write menu
 dhmenu.write = function(objects){
   
-  // Move dist to end
-  var dist = objects["Dist"];
-  delete objects["Dist"];
-  objects["Dist"] = dist;
+  // Move dist and prod to end
+  if(objects["Dist"]){
+    var dist = objects["Dist"];
+    delete objects["Dist"];
+    objects["Dist"] = dist;
+  }
+  if(objects["Prod"]){
+    var prod = objects["Prod"];
+    delete objects["Prod"];
+    objects["Prod"] = prod;
+  }
   
   if($('#menu')){
     var div_menu = $('#menu');
@@ -44,7 +51,7 @@ dhmenu.write = function(objects){
       
       // Add li - Switches
       $.each(nodes,function(i,node){        
-        if(node.class == 'switch' || node.class == 'Dist'){
+        if(node.class == 'switch'){
           var switchName = node.name.substr(0, node.name.indexOf('.')).toUpperCase(); 
           var tableName = switchName.substr(0, switchName.indexOf('-')); 
           var li_switch = $('<li id="menu_switch_'+switchName+'" />');
@@ -65,10 +72,10 @@ dhmenu.write = function(objects){
   }
   
   // Test
-  // dhmenu.testStatuses(objects);
+  dhmenu.testStatuses(objects);
   
   // Filter menu
-  // dhmenu.filter();
+  dhmenu.filter();
 }
 
 // Set colors in menu
@@ -167,7 +174,7 @@ dhmenu.testStatuses = function(objects){
   var switchSatuses = {};
   $.each(objects,function(hallName,nodes){
     $.each(nodes,function(i,node){
-      if(node.class == 'switch' || node.class == 'Dist'){
+      if(node.class == 'switch'){
         switchSatuses[node.name] = "OK";
       }
     });

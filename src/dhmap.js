@@ -131,10 +131,6 @@ var dhmap = {};
 		switches[object.name] = object;
 		renderRectangle(object, dhmap.colour.UNKNOWN, false, dry);
 	}
-
-  // Dist
-  function renderDist(object, dry) {
-  }
   
   // Draw a table
   function renderTable(object, dry) {
@@ -210,7 +206,7 @@ var dhmap = {};
   }
 
   // Which render method to use for each object type
-  var renders = { 'switch': renderSwitch, 'table': renderTable, 'Dist': renderDist };
+  var renders = { 'switch': renderSwitch, 'table': renderTable };
 
   dhmap.init = function(objects, click_callback) {
     var canvas = document.getElementById('canvas');
@@ -252,7 +248,7 @@ var dhmap = {};
     var hallsizelist = [];
     for ( var hall in objects ) {
 
-      if (hall == "Dist")
+      if (hall.toLowerCase() == "dist" || hall.toLowerCase() == "prod")
         continue;
     
       // Calculate new bounding box for this hall
