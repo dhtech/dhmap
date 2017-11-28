@@ -132,7 +132,7 @@ function computeStatus() {
       updateSwitchDialog(swname, sw);
   }
   dhmap.updateSwitches(switch_status);
-  dhmenu.updateStatuses(switch_status);
+  dhmenu.updateSwitches(switch_status);
 }
 
 function click(sw) {

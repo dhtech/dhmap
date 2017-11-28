@@ -132,6 +132,10 @@ var dhmap = {};
 		renderRectangle(object, dhmap.colour.UNKNOWN, false, dry);
 	}
 
+  // Dist
+  function renderDist(object, dry) {
+  }
+  
   // Draw a table
   function renderTable(object, dry) {
       renderRectangle(object, dhmap.colour.TABLE, true, dry);
@@ -142,6 +146,52 @@ var dhmap = {};
       if (canvasObjects[name].attrs.fill != color) {
           canvasObjects[name].attr({"fill": color})
       }
+  }
+  
+  dhmap.oldTableObject;
+  dhmap.oldTableColor;
+  dhmap.oldSwitchObject;
+  dhmap.oldSwitchColor;
+  dhmap.filter = function(searchFor) {
+    
+    // Reset previously marked
+    if(dhmap.oldTableObject){
+      dhmap.oldTableObject.attr({"fill": dhmap.oldTableColor});
+      dhmap.oldTableObject = undefined;
+    }
+    if(dhmap.oldSwitchObject){
+      dhmap.oldSwitchObject.attr({"fill": dhmap.oldSwitchColor});
+      dhmap.oldSwitchObject = undefined;
+    }
+    
+    // Mark object
+    if(searchFor){
+      //var table;
+      //var tableSwitch;
+      
+      // Table
+      if(canvasObjects[searchFor.toUpperCase()]){
+        dhmap.oldTableObject = canvasObjects[searchFor.toUpperCase()];
+      }
+      // Switch
+      else if (canvasObjects[searchFor.toLowerCase()+'.event.dreamhack.local']){
+        dhmap.oldSwitchObject = canvasObjects[searchFor.toLowerCase()+'.event.dreamhack.local'];
+        dhmap.oldTableObject = canvasObjects[searchFor.toUpperCase().substr(0, searchFor.indexOf('-'))];
+        
+        //dhmap.oldSwitchObject.substr(0, dhmap.oldSwitchObject.indexOf('-'));
+      }
+      else
+        return;
+      
+      if(dhmap.oldTableObject){
+        dhmap.oldTableColor = dhmap.oldTableObject.attr("fill");
+        dhmap.oldTableObject.attr({"fill": "#0000ff"});
+      }
+      if(dhmap.oldSwitchObject){
+        dhmap.oldSwitchColor = dhmap.oldSwitchObject.attr("fill");
+        dhmap.oldSwitchObject.attr({"fill": "#0000ff"});
+      }
+    } 
   }
 
   // Update the status of all switches previously drawn on screen
@@ -160,7 +210,7 @@ var dhmap = {};
   }
 
   // Which render method to use for each object type
-  var renders = { 'switch': renderSwitch, 'table': renderTable };
+  var renders = { 'switch': renderSwitch, 'table': renderTable, 'Dist': renderDist };
 
   dhmap.init = function(objects, click_callback) {
     var canvas = document.getElementById('canvas');
@@ -202,6 +252,9 @@ var dhmap = {};
     var hallsizelist = [];
     for ( var hall in objects ) {
 
+      if (hall == "Dist")
+        continue;
+    
       // Calculate new bounding box for this hall
       // First run is a dry run for just calculating the bounding boxes
       boundingX = 0;

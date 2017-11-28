@@ -4,6 +4,7 @@
     <link rel="stylesheet" href="src/vendor/jqueryui/jquery-ui.theme.min.css">
     <link rel="stylesheet" href="src/vendor/jqueryui/jquery-ui.min.css">
     <link rel="stylesheet" href="src/vendor/jqueryui/jquery-ui.structure.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="src/vendor/jquery/jquery-2.1.1.min.js"></script>
     <script src="src/vendor/raphael/raphael-2.1.2.min.js"></script>
     <script src="src/vendor/raphael-zpd/raphael-zpd.js"></script>
@@ -55,20 +56,20 @@ th {
 
 #header {
   background-color: white;
-  height: 36px;
   color: #cacaca;
   border-bottom: 1px solid #dddddd;
+  padding: 5px;
 }
 
 #menu_container {
   float: left;
+  clear: left;
 }
 #menu {
   background-color: white;
   height: 90%;
-  width: 100px;
+  width: 230px;
   float: left;
-  clear: left;
 }
 #menu ul{
 	list-style-type: none;
@@ -79,6 +80,9 @@ th {
   background-color: #555;
   color: white;
 }
+#menu > ul > li {
+	background-color: rgba(255, 255, 255, 0.8);
+}
 #menu > ul > li > a {
   display: block;
   border-bottom: 1px solid #ddd;
@@ -88,15 +92,23 @@ th {
   font-weight: bold;
   cursor: pointer;
 }
-#menu li > ul > li{
-	background-color:#ddd;
+#menu > ul > li > ul{
+	background-color:#999;
 }
 #menu li > ul > li > a {
   display: block;
   color: #000;
-	padding: 1px 10px;
+  padding: 3px 3px 3px 10px;
   text-decoration: none;
 	border-bottom-color: #999;
+}
+#menu li > ul > li > div.switch_info {
+  padding: 5px;
+  display: none;
+}
+#menu li > ul > li > div.switch_info > div{
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 5px;
 }
 #menu_button{
   display: none;
@@ -104,21 +116,26 @@ th {
   text-decoration: none;
   padding: 5px 10px;
   font-size:15px;
-  border: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  float: left;
 }
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 500px) {
   #menu {
     display: none;
-    width: 100%
+    width: 100%;
   }
   #menu_button{
     display: block;
+  }
+  #menu_container{
+    overflow-y: scroll;
+    width: 100%
   }
 }
 
 #canvas {
   border-left: 1px solid #dddddd;
-  //border-top: 1px solid #dddddd;
   height: 90%;
   width: 90%;
 }
@@ -137,13 +154,14 @@ body {
   <body>
     <div id="header">
       <h1>dhmap</h1>
-      Hilight:
-      <input type="checkbox" id="hilight_consumer_issues" onchange="computeStatus()" />
-      <label for="hilight_consumer_issues">Consumer Issues</label>
-      <span id="search"><input id="search_menu" onClick="this.select();" onkeydown = "if (event.keyCode == 13){dhmenu.filter($(this).val())}" type="text" placeholder="Search..." /></span>
+      <span><input type="checkbox" id="hilight_consumer_issues" onchange="dhmenu.filter('', this.checked);computeStatus();" checked="checked" />
+      <label for="hilight_consumer_issues">Consumer Issues</label></span>
+      <span id="search"><input id="search_menu" onkeydown = "if (event.keyCode == 13){dhmenu.filter($(this).val());dhmap.filter($(this).val())}" type="text" placeholder="Search..." /></span>
     </div>
-    <div style="float: left;"><a id="menu_button" href="javascript:void(0);" onClick="dhmenu.hideShowMenu();">&#9776;</a></div>
-    <div id="menu">
+    <div><a id="menu_button" href="javascript:void(0);" onClick="dhmenu.hideShowMenu();">&#9776;</a></div>
+    <div id="menu_container">
+      <div id="menu">
+      </div>
     </div>
     <div id="canvas"></div>
   </body>
