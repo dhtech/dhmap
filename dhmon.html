@@ -157,6 +157,7 @@ body {
       <span><input type="checkbox" id="hilight_consumer_issues" onchange="dhmenu.filter('', this.checked);computeStatus();" checked="checked" />
       <label for="hilight_consumer_issues">Consumer Issues</label></span>
       <span id="search"><input id="search_menu" onkeydown = "if (event.keyCode == 13){dhmenu.filter($(this).val());dhmap.filter($(this).val())}" type="text" placeholder="Search..." /></span>
+      <!--<input type="button" value="TEST" onclick="dhmenu.testStatuses();" />-->
     </div>
     <div><a id="menu_button" href="javascript:void(0);" onClick="dhmenu.hideShowMenu();">&#9776;</a></div>
     <div id="menu_container">

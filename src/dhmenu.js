@@ -64,18 +64,11 @@ dhmenu.write = function(objects){
           
           // Add information
           li_switch.append('<div class="switch_info"><div></div></div>');
-          
           ul_switches.append(li_switch);
         }
       });
     });
   }
-  
-  // Test
-  //dhmenu.testStatuses(objects);
-  
-  // Filter menu
-  //dhmenu.filter();
 }
 
 // Set colors in menu
@@ -120,15 +113,18 @@ dhmenu.updateSwitches = function(switchStatuses) {
 }
 
 // Filter menu
-dhmenu.filterWarnings;
-dhmenu.filter = function(searchFor = "", filterWarnings){
-  searchFor = searchFor.toUpperCase();
+dhmenu.filter_SearchFor;
+dhmenu.filter_Warnings = true;
+dhmenu.filter = function(filter_SearchFor, filter_Warnings){
   
-  if(filterWarnings === undefined)
-    filterWarnings = true;
-  dhmenu.filterWarnings = filterWarnings;
+  if(filter_Warnings === undefined)
+    filter_Warnings = dhmenu.filter_Warnings;
+  if(filter_SearchFor === undefined)
+    filter_SearchFor = dhmenu.filter_SearchFor;
   
-  if(searchFor){
+  if(filter_SearchFor){
+    filter_SearchFor = filter_SearchFor.toUpperCase();
+  
     // Hide all switches
     $('#menu > ul > li > ul > li').hide();
     
@@ -136,23 +132,30 @@ dhmenu.filter = function(searchFor = "", filterWarnings){
     $('#menu > ul > li > ul').show();
     
     // Show searched switches
-    $("#menu > ul > li > ul > li[id*='"+searchFor+"'").show();
+    $("#menu > ul > li > ul > li[id^='menu_switch_"+filter_SearchFor+"']").show();
+    $("#menu > ul > li > ul > li[id*='"+filter_SearchFor+"'][data-hall='Dist']").show();
+    $("#menu > ul > li > ul > li[id*='"+filter_SearchFor+"'][data-hall='Prod']").show();
   }
   // Hide OK switches
-  else if (filterWarnings){
+  else if (filter_Warnings){
     $('#menu > ul > li > ul > li').show();
     $('#menu > ul > li > ul > li[data-status="OK"]').hide();
     
-    // Expand halls
-    $('#menu > ul > li > ul').show();
+    // Expand halls if changed filter_Warnings
+    if(dhmenu.filter_Warnings != filter_Warnings)
+      $('#menu > ul > li > ul').show();
   }
   else{
     // Show all switches
     $('#menu > ul > li > ul > li').show();
     
-    // Fold halls
-    $('#menu > ul > li > ul').hide();
+    // Fold halls if changed filter_Warnings
+    if(dhmenu.filter_Warnings != filter_Warnings)
+      $('#menu > ul > li > ul').hide();
   }
+  
+  dhmenu.filter_Warnings = filter_Warnings;
+  dhmenu.filter_SearchFor = filter_SearchFor;
 }
 
 // Expand or fold hall
@@ -170,7 +173,14 @@ dhmenu.expandFoldHall = function(li_hall, fold) {
 }
 
 //Test
+dhmenu.objects = {};
 dhmenu.testStatuses = function(objects){
+  
+  if(!objects)
+    objects = dhmenu.objects;
+  else
+    dhmenu.objects = objects;
+  
   var switchSatuses = {};
   $.each(objects,function(hallName,nodes){
     $.each(nodes,function(i,node){

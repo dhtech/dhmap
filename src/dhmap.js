@@ -153,31 +153,31 @@ var dhmap = {};
     // Reset previously marked
     if(dhmap.oldTableObject){
       dhmap.oldTableObject.attr({"fill": dhmap.oldTableColor});
-      dhmap.oldTableObject = undefined;
     }
     if(dhmap.oldSwitchObject){
       dhmap.oldSwitchObject.attr({"fill": dhmap.oldSwitchColor});
-      dhmap.oldSwitchObject = undefined;
     }
     
-    // Mark object
+    // Mark object if not already marked
     if(searchFor){
-      //var table;
-      //var tableSwitch;
       
       // Table
-      if(canvasObjects[searchFor.toUpperCase()]){
+      if(canvasObjects[searchFor.toUpperCase()]
+        && canvasObjects[searchFor.toUpperCase()] != dhmap.oldTableObject){
+        dhmap.oldSwitchObject = undefined;
         dhmap.oldTableObject = canvasObjects[searchFor.toUpperCase()];
       }
       // Switch
-      else if (canvasObjects[searchFor.toLowerCase()+'.event.dreamhack.local']){
+      else if (canvasObjects[searchFor.toLowerCase()+'.event.dreamhack.local']
+        && canvasObjects[searchFor.toLowerCase()+'.event.dreamhack.local'] != dhmap.oldSwitchObject){
         dhmap.oldSwitchObject = canvasObjects[searchFor.toLowerCase()+'.event.dreamhack.local'];
         dhmap.oldTableObject = canvasObjects[searchFor.toUpperCase().substr(0, searchFor.indexOf('-'))];
-        
-        //dhmap.oldSwitchObject.substr(0, dhmap.oldSwitchObject.indexOf('-'));
       }
-      else
+      else{
+        dhmap.oldSwitchObject = undefined;
+        dhmap.oldTableObject = undefined;
         return;
+      }
       
       if(dhmap.oldTableObject){
         dhmap.oldTableColor = dhmap.oldTableObject.attr("fill");
