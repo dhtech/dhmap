@@ -139,7 +139,7 @@ var dhmap = {};
 
   // Update colour of previously drawn switch
   function setSwitchColor(name, color) {
-      if (canvasObjects[name].attrs.fill != color) {
+      if (canvasObjects[name].attrs.fill != color && canvasObjects[name].attrs.fill != "#0000ff") {
           canvasObjects[name].attr({"fill": color})
       }
   }
@@ -210,7 +210,7 @@ var dhmap = {};
 
   dhmap.init = function(objects, click_callback) {
     var canvas = document.getElementById('canvas');
-    var menu = document.getElementById('menu');
+    var menu = document.getElementById('menu_container');
     var header = document.getElementById('header');
     canvas.innerHTML = '';
     canvas.style.marginLeft = menu.clientWidth;

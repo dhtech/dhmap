@@ -65,9 +65,12 @@ th {
   float: left;
   clear: left;
 }
+#menu_scroll {
+  overflow-y: scroll;
+}
 #menu {
   background-color: white;
-  height: 90%;
+  height: 100%;
   width: 230px;
   float: left;
 }
@@ -121,15 +124,18 @@ th {
   float: left;
 }
 @media screen and (max-width: 500px) {
+  #menu_scroll {
+    overflow-y: visible;
+  }
   #menu {
-    display: none;
     width: 100%;
+    overflow-y: scroll;
   }
   #menu_button{
     display: block;
   }
   #menu_container{
-    overflow-y: scroll;
+    display: none;
     width: 100%
   }
 }
@@ -161,7 +167,9 @@ body {
     </div>
     <div><a id="menu_button" href="javascript:void(0);" onClick="dhmenu.hideShowMenu();">&#9776;</a></div>
     <div id="menu_container">
-      <div id="menu">
+      <div id="menu_scroll">
+        <div id="menu">
+        </div>
       </div>
     </div>
     <div id="canvas"></div>

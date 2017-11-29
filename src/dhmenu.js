@@ -9,10 +9,10 @@ dhmenu.init = function(objects, click_callback) {
 }
 
 dhmenu.hideShowMenu = function(){
-  if($("#menu").is(":visible")){
-    $("#menu").hide();
+  if($("#menu_container").is(":visible")){
+    $("#menu_container").hide();
   } else {
-    $("#menu").show();
+    $("#menu_container").show();
   }
 }
 
@@ -58,6 +58,7 @@ dhmenu.write = function(objects){
           //data-table="'+tableName+'"
           li_switch.attr("data-hall",hallName);
           li_switch.attr("data-table",tableName);
+          li_switch.attr("data-status","UNKNOWN");
           var a_switch = $('<a href="javascript:void(0);" onclick="dhmap.filter(\''+switchName+'\');" />');
           a_switch.text(switchName);
           li_switch.append(a_switch);
@@ -122,22 +123,8 @@ dhmenu.filter = function(filter_SearchFor, filter_Warnings){
   if(filter_SearchFor === undefined)
     filter_SearchFor = dhmenu.filter_SearchFor;
   
-  if(filter_SearchFor){
-    filter_SearchFor = filter_SearchFor.toUpperCase();
-  
-    // Hide all switches
-    $('#menu > ul > li > ul > li').hide();
-    
-    // Expand halls
-    $('#menu > ul > li > ul').show();
-    
-    // Show searched switches
-    $("#menu > ul > li > ul > li[id^='menu_switch_"+filter_SearchFor+"']").show();
-    $("#menu > ul > li > ul > li[id*='"+filter_SearchFor+"'][data-hall='Dist']").show();
-    $("#menu > ul > li > ul > li[id*='"+filter_SearchFor+"'][data-hall='Prod']").show();
-  }
   // Hide OK switches
-  else if (filter_Warnings){
+  if (filter_Warnings){
     $('#menu > ul > li > ul > li').show();
     $('#menu > ul > li > ul > li[data-status="OK"]').hide();
     
@@ -152,6 +139,30 @@ dhmenu.filter = function(filter_SearchFor, filter_Warnings){
     // Fold halls if changed filter_Warnings
     if(dhmenu.filter_Warnings != filter_Warnings)
       $('#menu > ul > li > ul').hide();
+  }
+  
+  // Search
+  if(filter_SearchFor){
+    filter_SearchFor = filter_SearchFor.toUpperCase();
+    
+    // Fold all halls if changed filter_SearchFor
+    if(dhmenu.filter_SearchFor != filter_SearchFor)
+      $('#menu > ul > li > ul').hide();
+    
+    // Expand searched halls
+    $("#menu > ul > li > ul > li[id^='menu_switch_"+filter_SearchFor+"']").parent().show();
+    $("#menu > ul > li > ul > li[id*='"+filter_SearchFor+"'][data-hall='Dist']").parent().show();
+    $("#menu > ul > li > ul > li[id*='"+filter_SearchFor+"'][data-hall='Prod']").parent().show();
+    
+    // Hide searched halls children
+    $("#menu > ul > li > ul > li[id^='menu_switch_"+filter_SearchFor+"']").parent().children().hide();
+    $("#menu > ul > li > ul > li[id*='"+filter_SearchFor+"'][data-hall='Dist']").parent().children().hide();
+    $("#menu > ul > li > ul > li[id*='"+filter_SearchFor+"'][data-hall='Prod']").parent().children().hide();
+    
+    // Show searched switches
+    $("#menu > ul > li > ul > li[id^='menu_switch_"+filter_SearchFor+"']").show();
+    $("#menu > ul > li > ul > li[id*='"+filter_SearchFor+"'][data-hall='Dist']").show();
+    $("#menu > ul > li > ul > li[id*='"+filter_SearchFor+"'][data-hall='Prod']").show();
   }
   
   dhmenu.filter_Warnings = filter_Warnings;
@@ -173,27 +184,13 @@ dhmenu.expandFoldHall = function(li_hall, fold) {
 }
 
 //Test
-dhmenu.objects = {};
-dhmenu.testStatuses = function(objects){
-  
-  if(!objects)
-    objects = dhmenu.objects;
-  else
-    dhmenu.objects = objects;
-  
+dhmenu.testStatuses = function(){  
   var switchSatuses = {};
-  $.each(objects,function(hallName,nodes){
-    $.each(nodes,function(i,node){
-      if(node.class == 'switch'){
-        switchSatuses[node.name] = "OK";
-      }
-    });
-  });
-  switchSatuses["d62-b.event.dreamhack.local"] = "CRITICAL";
+  switchSatuses["c01-a.event.dreamhack.local"] = "OK";
   switchSatuses["a01-a.event.dreamhack.local"] = "SPEED";
   switchSatuses["a02-a.event.dreamhack.local"] = "WARNING";
   switchSatuses["a03-b.event.dreamhack.local"] = "STP";
-  switchSatuses["d51-a.event.dreamhack.local"] = "ERRORS";
+  switchSatuses["d60-a.event.dreamhack.local"] = "ERRORS";
   
   switchSatuses["a-bridgeeast-sw.event.dreamhack.local"] = "CRITICAL";
   dhmap.updateSwitches(switchSatuses);
