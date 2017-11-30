@@ -114,7 +114,7 @@ function computeStatus() {
   switch_status = {};
 
   for (var sw in ping) {
-    if (ping[sw] > 30) {
+    if (ping[sw] > 60) {
       switch_status[sw] = 'CRITICAL';
     } else if (!checkIfaceStp(sw, model[sw], iface[sw])) {
       switch_status[sw] = 'STP';
