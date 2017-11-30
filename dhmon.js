@@ -19,6 +19,7 @@ var errors_to_human = {
 };
 
 var openDialog;
+var openDialogName;
 
 // TODO(bluecmd): Yeah, event mode makes you write the best code.
 // Refactor later (TM).
@@ -128,7 +129,8 @@ function computeStatus() {
       switch_status[sw] = 'OK';
     }
     var swname = sw.split('.')[0];
-    if (dialog_open[sw])
+    
+    if(openDialogName == swname)
       updateSwitchDialog(swname, sw);
   }
   dhmap.updateSwitches(switch_status);
@@ -141,6 +143,7 @@ function click(sw) {
   if(openDialog){
       openDialog.dialog('destroy').remove()
       openDialog = undefined;
+      openDialogName = undefined;
   }
 
   var title = '';
@@ -157,9 +160,11 @@ function click(sw) {
     close: function() {
       $(this).dialog('destroy').remove()
       openDialog = undefined;
+      openDialogName = undefined;
     }});
 
   openDialog = dialog;
+  openDialogName = swname;
   updateSwitchDialog(swname, sw.name);
 }
 
