@@ -55,7 +55,6 @@ dhmenu.write = function(objects){
           var switchName = node.name.substr(0, node.name.indexOf('.')).toUpperCase(); 
           var tableName = switchName.substr(0, switchName.indexOf('-')); 
           var li_switch = $('<li id="menu_switch_'+switchName+'" />');
-          //data-table="'+tableName+'"
           li_switch.attr("data-hall",hallName);
           li_switch.attr("data-table",tableName);
           li_switch.attr("data-status","UNKNOWN");
@@ -74,6 +73,10 @@ dhmenu.write = function(objects){
 
 // Set colors in menu
 dhmenu.updateSwitches = function(switchStatuses) {
+  
+  // Reset hall colors
+  $("li[id^='menu_hall_']").css("background-color", "#fff");
+  
   for (var switchName in switchStatuses ) {
     // Get short name
     var shortSwitchName = switchName;
@@ -83,29 +86,27 @@ dhmenu.updateSwitches = function(switchStatuses) {
     // Store status on element
     $("#menu_switch_"+shortSwitchName).attr("data-status", switchStatuses[switchName]);
     
-    // If the switch is unknown, render it as amber
-    if ( switchStatuses[switchName] === undefined) {
-      $("#menu_switch_"+shortSwitchName).css("background-color", "#ddd");
-    } 
-    // Else set status color
-    else {
-      var colour = dhmap.colour[switchStatuses[switchName]];
-      $("#menu_switch_"+shortSwitchName).css("background-color", colour.replace(')',',0.7)'));
+    // Set switch as unknown if missing
+    if(!switchStatuses[switchName])
+      switchStatuses[switchName] = "UNKNOWN";
+    
+    // Set color on switch
+    var colour = dhmap.colour[switchStatuses[switchName]];
+    $("#menu_switch_"+shortSwitchName).css("background-color", colour.replace(')',',0.7)'));
+    if(errors_to_human[switchStatuses[switchName]])
       $("#menu_switch_"+shortSwitchName).attr("title",errors_to_human[switchStatuses[switchName]]);
-      $("#menu_switch_"+shortSwitchName).find('div > div').text(errors_to_human[switchStatuses[switchName]]);
+    
+    // Set color on hall
+    var hallName = $("#menu_switch_"+shortSwitchName).attr("data-hall");
+    if(hallName && $("#menu_hall_"+hallName)){
+      var currentStatus = $("#menu_hall_"+hallName).attr("data-status");
+      var newStatus = switchStatuses[switchName];
       
-      // Set color on hall
-      var hallName = $("#menu_switch_"+shortSwitchName).attr("data-hall");
-      if(hallName && $("#menu_hall_"+hallName)){
-        var currentStatus = $("#menu_hall_"+hallName).attr("data-status");
-        var newStatus = switchStatuses[switchName];
-        
-        if (newStatus == "CRITICAL" || currentStatus == "OK" || !currentStatus)
-        {
-          colour = dhmap.colour[newStatus];
-          $("#menu_hall_"+hallName).css("background-color", colour.replace(')',',0.2)'));
-          $("#menu_hall_"+hallName).attr("data-status", switchStatuses[switchName]);
-        }
+      if (newStatus == "CRITICAL" || currentStatus == "OK" || !currentStatus)
+      {
+        colour = dhmap.colour[newStatus];
+        $("#menu_hall_"+hallName).css("background-color", colour.replace(')',',0.2)'));
+        $("#menu_hall_"+hallName).attr("data-status", switchStatuses[switchName]);
       }
     }
   }

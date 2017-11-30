@@ -18,7 +18,7 @@ var errors_to_human = {
   'CRITICAL': 'The switch has not replied to ICMP for 30 seconds or more'
 };
 
-var dialog_open = {};
+var openDialog;
 
 // TODO(bluecmd): Yeah, event mode makes you write the best code.
 // Refactor later (TM).
@@ -136,8 +136,13 @@ function computeStatus() {
 }
 
 function click(sw) {
-  if (dialog_open[sw.name])
-    return;
+  
+  // Close open dialog
+  if(openDialog){
+      openDialog.dialog('destroy').remove()
+      openDialog = undefined;
+  }
+
   var title = '';
   var swname = sw.name.split('.')[0];
   title += '<div class="status" id="switch-' + swname + '" ></div>';
@@ -151,10 +156,10 @@ function click(sw) {
   dialog.dialog({width: 500, height: 375, resizable: false,
     close: function() {
       $(this).dialog('destroy').remove()
-      dialog_open[sw.name] = false;
+      openDialog = undefined;
     }});
 
-  dialog_open[sw.name] = true;
+  openDialog = dialog;
   updateSwitchDialog(swname, sw.name);
 }
 
