@@ -29,6 +29,7 @@ var dhmap = {};
     'SPEED':   'rgb(223,0,255)',
     'STP':     'rgb(0,102,153)',
     'ERRORS':  'rgb(0,255,255)',
+    'ALERT':   'rgb(255,200,0)',
     'UNKNOWN': 'rgb(112,112,112)',
     'TABLE':   'rgba(242,242,242, 0.5)'
   };

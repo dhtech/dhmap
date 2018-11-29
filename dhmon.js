@@ -8,6 +8,7 @@ var iface = null;
 var switch_vlans = null;
 var dhcp_status = null;
 var start_fetch = null;
+var alert_hosts = null;
 
 var errors_to_human = {
   'OK': 'Everything working as expected',
@@ -15,7 +16,8 @@ var errors_to_human = {
   'STP': 'At least one port is blocked by Spanning Tree',
   'ERRORS': 'At least one port is dropping packets due to corruption',
   'WARNING': 'The switch is not replying to SNMP requests',
-  'CRITICAL': 'The switch has not replied to ICMP for 30 seconds or more'
+  'CRITICAL': 'The switch has not replied to ICMP for 30 seconds or more',
+  'ALERT': 'The switch has at least one alert present in the monitoring system'
 };
 
 var openDialog;
@@ -125,6 +127,8 @@ function computeStatus() {
       switch_status[sw] = 'ERRORS';
     } else if (snmp[sw] == undefined || snmp[sw].since > 360) {
       switch_status[sw] = 'WARNING';
+    } else if (alert_hosts[sw] != undefined) {
+      switch_status[sw] = 'ALERT';
     } else {
       switch_status[sw] = 'OK';
     }
@@ -310,6 +314,9 @@ $.getJSON('./data.json', function(objects) {
       }),
       $.getJSON('/analytics/switch.vlans', function(objects) {
         switch_vlans = objects;
+      }),
+      $.getJSON('/analytics/alerts.hosts', function(objects) {
+        alert_hosts = objects;
       })
     ).then(function() {
       computeStatus();
