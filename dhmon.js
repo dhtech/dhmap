@@ -10,6 +10,9 @@ var dhcp_status = null;
 var start_fetch = null;
 var alert_hosts = null;
 
+var ifre =/(^[gxf]e-[0-9\/]+$)|(Ethernet)/;
+var gere =/(^ge-[0-9\/]+$)|(GigabitEthernet)/;
+
 var errors_to_human = {
   'OK': 'Everything working as expected',
   'SPEED': 'At least one link is running at non-ideal speed',
@@ -36,14 +39,15 @@ function checkIfaceSpeed(sw, model, ifaces) {
     if (!iface.trunk)
       continue;
 
-    if (name.indexOf('Ethernet') == -1)
-      continue;
+    if (ifre.exec(name) == null) {
+       continue;
+    }
 
     if (iface.status == 'up') {
       if (iface.speed == '10') {
         failed = true;
       } else if (iface.speed == '100') {
-        if (name.indexOf('GigabitEthernet') != -1) {
+        if (gere.exec(name) == null) {
           failed = true;
         }
       }
@@ -66,8 +70,9 @@ function checkIfaceErrors(sw, model, ifaces) {
     if (!iface.trunk && !show_consumer_ifaces)
       continue;
 
-    if (name.indexOf('Ethernet') == -1)
-      continue;
+    if (ifre.exec(name) == null) {
+       continue;
+    }
 
     if (iface.status == 'up') {
       if (iface.errors_in > 0 || iface.errors_out > 0) {
@@ -85,6 +90,7 @@ function checkIfaceStp(sw, model, ifaces) {
   var failed = false;
   var show_consumer_ifaces =
     document.getElementById('hilight_consumer_issues').checked;
+
   for (var name in ifaces) {
     var iface = ifaces[name];
     /* skip access ports if we don't want to show consumer ifaces */
@@ -93,8 +99,9 @@ function checkIfaceStp(sw, model, ifaces) {
 
     /* TODO(bluecmd): Maybe not set 'error' on non-ethernet
      * interfaces that don't speak STP */
-    if (name.indexOf('Ethernet') == -1)
-      continue;
+    if (ifre.exec(name) == null) {
+       continue;
+    }
 
     if (iface.status == 'up') {
       if (iface.stp == 'error') {
@@ -224,8 +231,9 @@ function updateSwitchDialog(sw, fqdn) {
     var ifacename = idx;
 
     /* Skip special interfaces */
-    if (ifacename.indexOf('Ethernet') == -1)
-      continue;
+    if (ifre.exec(ifacename) == null) {
+       continue;
+    }
 
     count++;
     if (count % 24 == 1 && count > 1)
@@ -245,7 +253,7 @@ function updateSwitchDialog(sw, fqdn) {
       if (!entry.trunk && parseInt(entry.speed) < 100)
         portdiv.css({'background-color': dhmap.colour.SPEED});
       if (!entry.trunk && parseInt(entry.speed) < 1000 &&
-          ifacename.indexOf('Gigabit') != -1)
+          gere.exec(ifacename) != null)
         portdiv.css({'background-color': dhmap.colour.SPEED});
       if (entry.stp == 'error')
         portdiv.css({'background-color': dhmap.colour.STP});
