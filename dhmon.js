@@ -15,7 +15,7 @@ var gere =/(^ge-[0-9\/]+$)|(GigabitEthernet)/;
 
 var errors_to_human = {
   'OK': 'Everything working as expected',
-  'SPEED': 'At least one link is running at non-ideal speed',
+  'SPEED': 'At least one link is running at non-ideal speed or link is full',
   'STP': 'At least one port is blocked by Spanning Tree',
   'ERRORS': 'At least one port is dropping packets due to corruption',
   'WARNING': 'The switch is not replying to SNMP requests',
@@ -35,7 +35,7 @@ function checkIfaceSpeed(sw, model, ifaces) {
   var failed = false;
   for (var name in ifaces) {
     var iface = ifaces[name];
-    /* skip access ports if we don't want to show consumer ifaces */
+    /* skip access ports, sleeping computers rarely link max speed */
     if (!iface.trunk)
       continue;
 
@@ -167,7 +167,7 @@ function click(sw) {
   dialog.append($('<div>').attr({'id': 'ports-' + swname}));
   dialog.append($('<br/>'));
   dialog.append($('<div>').attr({'id': 'portinfo-' + swname}));
-  dialog.dialog({width: 500, height: 375, resizable: false,
+  dialog.dialog({width: 500, height: 390, resizable: false,
     close: function() {
       $(this).dialog('destroy').remove()
       openDialog = undefined;
@@ -191,23 +191,27 @@ function updateSwitchDialog(sw, fqdn) {
   var dhcpinfo = $('#dhcpinfo-' + sw);
   dhcpinfo.html('');
   var dhcptable = $('<table width="300px">');
-  dhcptable.append(
-      '<tr><th>Network</th><th>Clients</th><th>Max</th><th>Utilization</th>');
-  for (var vlan in switch_vlans[fqdn]) {
-    // Grab the first network with the same VLAN
-    for (var network in dhcp_status) {
-      var ds = dhcp_status[network];
-      if (ds.vlan == vlan) {
-        dhcptable.append(
-            $('<tr>')
-            .append($('<td>').text(network))
-            .append($('<td>').text(ds.usage))
-            .append($('<td>').text(ds.max))
-            .append($('<td>').text(Math.ceil(ds.usage / ds.max * 100) + '%')))
+  if (switch_vlans[fqdn] != undefined) {
+    dhcptable.append(
+        '<tr><th>Network</th><th>Clients</th><th>Max</th><th>DHCP Pool Usage</th>');
+    for (var vlan in switch_vlans[fqdn]) {
+      // Grab the first network with the same VLAN
+      for (var network in dhcp_status) {
+        var ds = dhcp_status[network];
+        if (ds.vlan == vlan) {
+          dhcptable.append(
+              $('<tr>')
+              .append($('<td>').text(network))
+              .append($('<td>').text(ds.usage))
+              .append($('<td>').text(ds.max))
+              .append($('<td>').text(Math.ceil(ds.usage / ds.max * 100) + '%')))
+        }
       }
     }
+    dhcpinfo.append(dhcptable);
+  } else {
+    dhcpinfo.append('<i>No DHCP pool data available because VLAN information unavailable for switch model</i>');
   }
-  dhcpinfo.append(dhcptable);
 
   var ports = $('#ports-' + sw);
   ports.html('<hr/>');
@@ -242,15 +246,20 @@ function updateSwitchDialog(sw, fqdn) {
     var portdiv = $('<div class="port">').attr({
       'id': 'port-' + sw + ':' + entry.lastoid});
 
+    tx_full = false;
+    rx_full = false;
+    speed_fail = false;
     if (entry.status == 'up') {
       portdiv.css({'background-color': dhmap.colour.OK});
+      tx_full = ((entry.tx_10min * 8 / 1000 / 1000) / entry.speed > 0.95);
+      rx_full = ((entry.rx_10min * 8 / 1000 / 1000) / entry.speed > 0.95);
+      speed_fail = (entry.trunk && parseInt(entry.speed) < 1000) ||
+                    (!entry.trunk && parseInt(entry.speed) < 100);
       if (parseFloat(entry.errors_in) > 0)
         portdiv.css({'background-color': dhmap.colour.ERRORS});
       if (parseFloat(entry.errors_out) > 0)
         portdiv.css({'background-color': dhmap.colour.ERRORS});
-      if (entry.trunk && parseInt(entry.speed) < 1000)
-        portdiv.css({'background-color': dhmap.colour.SPEED});
-      if (!entry.trunk && parseInt(entry.speed) < 100)
+      if (tx_full || rx_full || speed_fail)
         portdiv.css({'background-color': dhmap.colour.SPEED});
       if (!entry.trunk && parseInt(entry.speed) < 1000 &&
           gere.exec(ifacename) != null)
@@ -261,7 +270,7 @@ function updateSwitchDialog(sw, fqdn) {
     if (entry.admin != 'up')
       portdiv.css({'background-color': dhmap.colour.WARNING});
 
-    portdiv.hover(function(entry, ifacename, sw) {
+    portdiv.hover(function(entry, ifacename, sw, tx_full, rx_full, speed_fail) {
       var portinfo = $('#portinfo-' + sw);
       portinfo.html('');
 
@@ -278,8 +287,19 @@ function updateSwitchDialog(sw, fqdn) {
       if (entry.status == 'up') {
         table.append(
           $('<tr>').append('<td>Spanning Tree:</td><td>' + entry.stp + '</td>'));
+        sb = speed_fail ? 'font-weight: bold; animation: blinker 1s linear infinite;' : '';
         table.append(
-          $('<tr>').append('<td>Speed:</td><td>' + entry.speed + ' Mbit/s</td>'));
+          $('<tr>').append('<td>Speed:</td><td><span style="' + sb + '">' + entry.speed + ' Mbit/s</span></td>'));
+        tb = tx_full ? 'font-weight: bold; animation: blinker 1s linear infinite;' : '';
+        rb = rx_full ? 'font-weight: bold; animation: blinker 1s linear infinite;' : '';
+        table.append(
+          $('<tr>').append('<td>Traffic (10 min avg.):</td><td>' + 
+                  'TX: <span style="' + tb + '">' + Math.ceil(entry.tx_10min*8/1000/1000) + ' Mbit/s</span>, ' +
+                  'RX: <span style="' + rb + '">' + Math.ceil(entry.rx_10min*8/1000/1000) + ' Mbit/s</span> </td>'));
+        table.append(
+          $('<tr>').append('<td>Traffic (instant):</td><td>' + 
+                  'TX: ' + Math.ceil(entry.tx*8/1000/1000) + ' Mbit/s, ' +
+                  'RX: ' + Math.ceil(entry.rx*8/1000/1000) + ' Mbit/s </td>'));
         table.append(
           $('<tr>').append(
             '<td>Errors:</td><td>In: ' + Math.ceil(entry.errors_in*100)/100 +
@@ -288,7 +308,7 @@ function updateSwitchDialog(sw, fqdn) {
 
       portinfo.append(table);
       $(this).css({'border-color': 'red'});
-    }.bind(portdiv, entry, ifacename, sw), function() {
+    }.bind(portdiv, entry, ifacename, sw, tx_full, rx_full, speed_fail), function() {
       $(this).css({'border-color': 'black'});
     }.bind(portdiv));
     portsdiv.append(portdiv);
@@ -345,3 +365,7 @@ $.widget("ui.dialog", $.extend({}, $.ui.dialog.prototype, {
         }
     }
 }));
+
+function darkmode(mode) {
+  document.body.style.backgroundColor = mode ? '#111' : '';
+}
