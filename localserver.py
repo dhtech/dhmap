@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Used to run dhmap + analytics on the same machine for dev purposes
 
 import SimpleHTTPServer
@@ -19,6 +19,6 @@ class RevHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 httpd = SocketServer.TCPServer(("", PORT), RevHandler)
 
-print "serving at port", PORT
+print("serving at port {}".format(PORT))
 httpd.serve_forever()
 
