@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """Generate json to use for dhmap given a SQLite3 version of ipplan."""
 import collections
 import json
@@ -42,6 +42,6 @@ if __name__ == '__main__':
     else:
       halls[switch['hall']].append(switch)
 
-  print json.dumps(halls)
+  print(json.dumps(halls))
   conn.close()
 
