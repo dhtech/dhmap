@@ -367,5 +367,5 @@ $.widget("ui.dialog", $.extend({}, $.ui.dialog.prototype, {
 }));
 
 function darkmode(mode) {
-  document.body.style.backgroundColor = mode ? '#111' : '';
+  document.body.style.backgroundColor = mode ? '#111' : '#fff';
 }
