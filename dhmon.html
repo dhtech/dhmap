@@ -17,6 +17,7 @@ body {
   padding: 0;
   margin: 0;
   overflow: hidden;
+  background-color: #111;
 }
 
 th {
@@ -166,7 +167,7 @@ body {
       <h1>dhmap</h1>
       <span><input type="checkbox" id="hilight_consumer_issues" onchange="dhmenu.filter('', this.checked);computeStatus();" checked="checked" />
       <label for="hilight_consumer_issues">Consumer Issues</label></span>
-      <span><input type="checkbox" id="darkmode" onchange="darkmode(this.checked);" />
+      <span><input type="checkbox" id="darkmode" checked onchange="darkmode(this.checked);" />
       <label for="darkmode">Dark Mode</label></span>
       <span id="search"><input id="search_menu" onkeydown = "if (event.keyCode == 13){dhmenu.filter($(this).val());dhmap.filter($(this).val())}" type="text" placeholder="Search..." /></span>
       <!--<input type="button" value="TEST" onclick="dhmenu.testStatuses();" />-->
