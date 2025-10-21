@@ -13,10 +13,12 @@ if __name__ == '__main__':
   c = conn.cursor()
 
   c.execute(
-    'SELECT name, horizontal, "table" AS class, NULL hall, x1, y1, x2, y2, width, height FROM table_coordinates'
+    'SELECT name, horizontal, "table" AS class, hall, x1, y1, x2, y2, width, height FROM table_coordinates'
     
-    ' UNION SELECT name, 0 AS horizontal, "switch" AS class, NULL hall, x + 5 AS x1, y + 5 AS y1, x + 5 AS x2,'
-    ' y + 5 AS y1, 5 AS width, 5 AS height FROM switch_coordinates'
+    ' UNION SELECT sc.name, 0 AS horizontal, "switch" AS class, tc.hall hall, sc.x + 5 AS x1, sc.y + 5 AS y1, sc.x + 5 AS x2,'
+    ' sc.y + 5 AS y1, 5 AS width, 5 AS height '
+    ' FROM switch_coordinates sc '
+    ' INNER JOIN table_coordinates tc ON sc.table_name = tc.name'
     
     ' UNION SELECT h.name name, 0 horizontal, "switch" class, "Dist" hall, 0 x1, 0 y1, 0 x2, 0 y2, 0 height, 0 width'
     ' FROM host h INNER JOIN option o ON o.node_id = h.node_id WHERE o.name = "layer" AND o.value = "dist"'
