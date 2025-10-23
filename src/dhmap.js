@@ -249,7 +249,7 @@ var dhmap = {};
     var hallsizelist = [];
     for ( var hall in objects ) {
 
-      if (hall.toLowerCase() == "dist" || hall.toLowerCase() == "prod")
+      if (hall.toLowerCase() == "dist" || hall.toLowerCase() == "prod" || hall.toLowerCase() == "grid")
         continue;
     
       // Calculate new bounding box for this hall
@@ -272,52 +272,49 @@ var dhmap = {};
     }
 
     // Second phase: Figure out hall order.
-    hallsizelist.sort(function(a, b) { return a[0] - b[0]; });
-    hallsizelist.reverse();
+    // Generate 2D array from the halls position objects
+    // Find grid size
+    const maxrows = Math.max(...positions.map(p => p.x1));
+    const maxcols = Math.max(...positions.map(p => p.y1));
+    var hallgrid = Array.from({ length: maxcols + 1 }, () =>
+      Array.from({ length: maxrows + 1 }, () => null)
+    );
 
-    var hallorder = [];
-    for ( var i in hallsizelist ) {
-      hallorder.push(hallsizelist[i][1]);
-    }
+    objects["Grid"].forEach(h => {
+      hallgrid[h.y1][h.x1] = h.name      
+    });
 
-    // Third pass: Order halls in size order.
-    // Try to compact halls if possible.
-    var maxHallHeight = hallsizes[hallorder[0]].h;
-    var maxX = 0;
     var padY = 100;
     var padX = 100;
-    for ( var j in hallorder ) {
-      var hall = hallorder[j];
+    const colswidths = Array.from({length: maxcols + 1}, () => padX)
+    const rowsheights = Array.from({length: maxcols + 1}, () => padY)
 
-      boundingX = 0;
-      boundingY = 0;
+    for (let y = 0; y < maxrows+1; y++) {
+      var maxHeight = 0;
+      for (let x = 0; x < maxcols+1; x++) {
+        const hallName = hallgrid[y][x];
+        const hall = hallsizes[hallName];
 
-      for ( var i in objects[hall] ) {
-        renders[objects[hall][i]['class']](objects[hall][i], true);
-      }
-
-      hallsizes[hall] = {
-        'x': offsetX,
-        'y': offsetY,
-        'w': boundingX,
-        'h': boundingY,
-      };
-
-      if (maxX < offsetX + boundingX + padX) {
-        maxX = offsetX + boundingX + padX;
-      }
-
-      // Look ahead and see where if we can squeeze the hall in below this one.
-      var nj = parseInt(j) + 1;
-      if (nj < hallorder.length) {
-        var nextHall = hallorder[nj];
-        if ((hallsizes[hall].y + hallsizes[hall].h + padY + hallsizes[nextHall].h) < maxHallHeight) {
-          offsetY += boundingY + padY;
-        } else {
-          offsetY = 0;
-          offsetX = maxX;
+        if (hall && hall.h > maxHeight) {
+          maxHeight = hall.h;
         }
       }
+
+      rowsheights[y] = maxHeight;
+    }
+
+    for (let x = 0; x < maxcols+1; x++) {
+      var maxWidth = 0;
+      for (let y = 0; y < maxrows+1; y++) {
+        const hallName = grid[y][x];
+        const hall = hallsizes[hallName];
+
+        if (hall && hall.w > maxWidth) {
+          maxWidth = hall.w;
+        }
+      }
+
+      colswidths[x] = maxWidth;
     }
 
     // Fourth phase: draw bounding boxes of halls.

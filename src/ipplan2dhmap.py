@@ -27,7 +27,10 @@ if __name__ == '__main__':
     ' FROM host h INNER JOIN option o ON o.node_id = h.node_id'
     ' LEFT JOIN switch_coordinates sc ON sc.name = h.name'
     ' WHERE sc.name IS NULL AND o.name = "layer" AND o.value = "access" AND h.name LIKE "%prod%"'
-    
+
+    ' UNION SELECT hp.name name, 0 horizontal, "hall" class, "Grid" hall, hp.x x1, hp.y y1, 0 x2, 0 y2, 0 height, 0 width'
+    ' FROM hall_positions hp'
+
     ' ORDER BY hall'
   )
   results = c.fetchall()
