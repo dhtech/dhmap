@@ -274,25 +274,36 @@ var dhmap = {};
     // Second phase: Figure out hall order.
     // Generate 2D array from the halls position objects
     // Find grid size
-    const maxrows = Math.max(...positions.map(p => p.x1));
-    const maxcols = Math.max(...positions.map(p => p.y1));
-    var hallgrid = Array.from({ length: maxcols + 1 }, () =>
-      Array.from({ length: maxrows + 1 }, () => null)
+    const maxrows = Math.max(...objects['Grid'].map(p => p.y1));
+    const maxcols = Math.max(...objects['Grid'].map(p => p.x1));
+    const nbrows = maxrows+1;
+    const nbcols = maxcols+1;
+
+    var hallgrid = Array.from({ length: nbcols }, () =>
+      Array.from({ length: nbrows }, () => ({'x': null, 'y': null, 'hall':null}))
     );
 
     objects["Grid"].forEach(h => {
-      hallgrid[h.y1][h.x1] = h.name      
+      hallgrid[h.x1][h.y1]['hall'] = h.name      
     });
 
     var padY = 100;
     var padX = 100;
-    const colswidths = Array.from({length: maxcols + 1}, () => padX)
-    const rowsheights = Array.from({length: maxcols + 1}, () => padY)
+    const colswidths = Array.from({length: nbcols}, () => padX)
+    const rowsheights = Array.from({length: nbrows}, () => padY)
 
-    for (let y = 0; y < maxrows+1; y++) {
+    /* [
+        ["normal", "20plus"]
+       ]
+             x=0:   x=1: 
+       y=0: [normal][20plus]
+    */
+    for (let y = 0; y < nbrows; y++) {
       var maxHeight = 0;
-      for (let x = 0; x < maxcols+1; x++) {
-        const hallName = hallgrid[y][x];
+      for (let x = 0; x < nbcols; x++) {
+        const hallName = hallgrid[x][y].hall;
+        if(hallName===null)
+          continue
         const hall = hallsizes[hallName];
 
         if (hall && hall.h > maxHeight) {
@@ -303,10 +314,12 @@ var dhmap = {};
       rowsheights[y] = maxHeight;
     }
 
-    for (let x = 0; x < maxcols+1; x++) {
+    for (let x = 0; x < nbcols; x++) {
       var maxWidth = 0;
-      for (let y = 0; y < maxrows+1; y++) {
-        const hallName = grid[y][x];
+      for (let y = 0; y < nbrows; y++) {
+        const hallName = hallgrid[x][y].hall;
+        if(hallName===null)
+          continue
         const hall = hallsizes[hallName];
 
         if (hall && hall.w > maxWidth) {
@@ -317,42 +330,70 @@ var dhmap = {};
       colswidths[x] = maxWidth;
     }
 
+    // Calculate top left corner of each grid cell
+    var curcol_offset = 0
+    for (let x = 0; x < nbcols; x++) {
+      var currow_offset = 0
+      for (let y = 0 ; y < nbrows; y++) {
+        hallgrid[x][y].x = curcol_offset;
+        hallgrid[x][y].y = currow_offset;
+        currow_offset += rowsheights[y] + 45 + 45; // Account for hall box padding + label
+      }
+      curcol_offset += colswidths[x] + 45; // Account for hall box padding
+    }
+
     // Fourth phase: draw bounding boxes of halls.
     var halls = Object.keys(objects).length;
     var hallidx = 0;
-    for ( var i in hallorder ) {
-      var hall = hallorder[i];
-      var hue = (hallidx/halls) * 360;
+    for (let x = 0; x < nbcols; x++) {
+      for (let y = 0 ; y < nbrows; y++) {
+        var hall = hallgrid[x][y].hall;
+        if(hall===null){
+          continue
+        }
+        var hue = (hallidx/halls) * 360;
+        var size = hallsizes[hall];
 
-      var size = hallsizes[hall];
+        var gridOffsetX = hallgrid[x][y].x;
+        var gridOffsetY = hallgrid[x][y].y;
 
-      var hallRect = paper.rect(
-          (size.x - 15) * scaling,
-          (size.y - 15) * scaling,
-          (size.w + 30) * scaling,
-          (size.h + 30) * scaling);
-      var labelOffsetX = (size.w + 30) * scaling / 2;
-      var labelOffsetY = -100;
-      hallRect.attr({fill: 'hsla(' + hue + ',100%,50%,0.3)'});
-      hallRect.label = paper.text(hallRect.attr('x') + labelOffsetX, hallRect.attr('y') + labelOffsetY, hall);
-      hallRect.label.attr({'font-size': 144});
-      hallRect.label.attr({'border': '1px solid red'});
-      hallRect.label.attr({'fill': 'rgba(200, 200, 200, 0.7)'});
+        var hallRect = paper.rect(
+            (gridOffsetX + size.x - 15) * scaling,
+            (gridOffsetY + size.y - 15) * scaling,
+            (size.w + 30) * scaling,
+            (size.h + 30) * scaling);
+        var labelOffsetX = (size.w + 30) * scaling / 2;
+        var labelOffsetY = -100;
+        hallRect.attr({fill: 'hsla(' + hue + ',100%,50%,0.3)'});
+        hallRect.label = paper.text(hallRect.attr('x') + labelOffsetX, hallRect.attr('y') + labelOffsetY, hall);
+        hallRect.label.attr({'font-size': 144});
+        hallRect.label.attr({'border': '1px solid red'});
+        hallRect.label.attr({'fill': 'rgba(200, 200, 200, 0.7)'});
 
-      hallidx++;
+        hallidx++;
+      }
     }
 
     // Fifth phase: draw objects.
-    for ( var i in hallorder ) {
-      var hall = hallorder[i];
-      offsetX = hallsizes[hall].x;
-      offsetY = hallsizes[hall].y;
+    for (let x = 0; x < nbcols; x++) {
+      for (let y = 0 ; y < nbrows; y++) {
+        var hall = hallgrid[x][y].hall;
+        if(hall===null){
+          continue
+        }
 
-      // Re-do with real paint this time
-      boundingX = 0;
-      boundingY = 0;
-      for ( var i in objects[hall] ) {
-        renders[objects[hall][i]['class']](objects[hall][i], false);
+        var gridOffsetX = hallgrid[x][y].x;
+        var gridOffsetY = hallgrid[x][y].y;
+
+        offsetX = hallsizes[hall].x + gridOffsetX ;
+        offsetY = hallsizes[hall].y + gridOffsetY;
+
+        // Re-do with real paint this time
+        boundingX = 0;
+        boundingY = 0;
+        for ( var i in objects[hall] ) {
+          renders[objects[hall][i]['class']](objects[hall][i], false);
+        }
       }
     }
   }
