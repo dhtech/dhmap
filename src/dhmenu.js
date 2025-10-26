@@ -30,6 +30,12 @@ dhmenu.write = function(objects){
     delete objects["Prod"];
     objects["Prod"] = prod;
   }
+
+  //Skip grid as it will never contain switches.
+  if(objects["Grid"]){
+    var prod = objects["Grid"];
+    delete objects["Grid"];
+  }
   
   if($('#menu')){
     var div_menu = $('#menu');
