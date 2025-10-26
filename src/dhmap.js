@@ -271,62 +271,57 @@ var dhmap = {};
       hallsizelist.push([boundingY * boundingX, hall]);
     }
 
-    // Second phase: Figure out hall order.
-    // Generate 2D array from the halls position objects
-    // Find grid size
-    const maxrows = Math.max(...objects['Grid'].map(p => p.y1));
-    const maxcols = Math.max(...objects['Grid'].map(p => p.x1));
-    const nbrows = maxrows+1;
-    const nbcols = maxcols+1;
+    // Second phase: Generate 2D array from the halls position objects
+    // Figure out grid size
+    var maxrows = Math.max(...objects['Grid'].map(p => p.y1));
+    var maxcols = Math.max(...objects['Grid'].map(p => p.x1));
+    var nbrows = maxrows+1;
+    var nbcols = maxcols+1;
 
+    // Create grid
     var hallgrid = Array.from({ length: nbcols }, () =>
       Array.from({ length: nbrows }, () => ({'x': null, 'y': null, 'hall':null}))
     );
-
+    
+    // Populate grid
     objects["Grid"].forEach(h => {
       hallgrid[h.x1][h.y1]['hall'] = h.name      
     });
 
     var padY = 100;
     var padX = 100;
-    const colswidths = Array.from({length: nbcols}, () => padX)
-    const rowsheights = Array.from({length: nbrows}, () => padY)
+    var colswidths = Array.from({length: nbcols}, () => padX)
+    var rowsheights = Array.from({length: nbrows}, () => padY)
 
-    /* [
-        ["normal", "20plus"]
-       ]
-             x=0:   x=1: 
-       y=0: [normal][20plus]
-    */
+    // Calulate the max height in each row
     for (let y = 0; y < nbrows; y++) {
       var maxHeight = 0;
       for (let x = 0; x < nbcols; x++) {
-        const hallName = hallgrid[x][y].hall;
-        if(hallName===null)
+        var hallName = hallgrid[x][y].hall;
+        if (hallName === null ) {
           continue
-        const hall = hallsizes[hallName];
-
+        }
+        var hall = hallsizes[hallName];
         if (hall && hall.h > maxHeight) {
           maxHeight = hall.h;
         }
       }
-
       rowsheights[y] = maxHeight;
     }
 
+    //Calculate the max width of each column
     for (let x = 0; x < nbcols; x++) {
       var maxWidth = 0;
       for (let y = 0; y < nbrows; y++) {
-        const hallName = hallgrid[x][y].hall;
-        if(hallName===null)
+        var hallName = hallgrid[x][y].hall;
+        if (hallName === null ) {
           continue
-        const hall = hallsizes[hallName];
-
+        }
+        var hall = hallsizes[hallName];
         if (hall && hall.w > maxWidth) {
           maxWidth = hall.w;
         }
       }
-
       colswidths[x] = maxWidth;
     }
 
@@ -342,13 +337,13 @@ var dhmap = {};
       curcol_offset += colswidths[x] + 45; // Account for hall box padding
     }
 
-    // Fourth phase: draw bounding boxes of halls.
+    // Third phase: draw bounding boxes of halls.
     var halls = Object.keys(objects).length;
     var hallidx = 0;
     for (let x = 0; x < nbcols; x++) {
       for (let y = 0 ; y < nbrows; y++) {
         var hall = hallgrid[x][y].hall;
-        if(hall===null){
+        if (hall === null ) {
           continue
         }
         var hue = (hallidx/halls) * 360;
@@ -374,11 +369,11 @@ var dhmap = {};
       }
     }
 
-    // Fifth phase: draw objects.
+    // Fourth phase: draw objects.
     for (let x = 0; x < nbcols; x++) {
       for (let y = 0 ; y < nbrows; y++) {
         var hall = hallgrid[x][y].hall;
-        if(hall===null){
+        if (hall === null ) {
           continue
         }
 
