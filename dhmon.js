@@ -369,3 +369,11 @@ $.widget("ui.dialog", $.extend({}, $.ui.dialog.prototype, {
 function darkmode(mode) {
   document.body.style.backgroundColor = mode ? '#111' : '#fff';
 }
+
+function funmode(mode) {
+  if(mode) {
+    document.body.classList.add('funMode');
+  } else {
+    document.body.classList.remove('funMode');
+  }
+}

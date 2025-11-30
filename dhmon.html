@@ -20,6 +20,15 @@ body {
   background-color: #111;
 }
 
+.funMode {
+  background:
+  linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
+  url("Reth-50events-slide2.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center center;
+}
+
 th {
   text-align: left;
 }
@@ -169,6 +178,8 @@ body {
       <label for="hilight_consumer_issues">Consumer Issues</label></span>
       <span><input type="checkbox" id="darkmode" checked onchange="darkmode(this.checked);" />
       <label for="darkmode">Dark Mode</label></span>
+      <span><input type="checkbox" id="funmode" onchange="funmode(this.checked);" />
+      <label for="darkmode">Fun Mode</label></span>
       <span id="search"><input id="search_menu" onkeydown = "if (event.keyCode == 13){dhmenu.filter($(this).val());dhmap.filter($(this).val())}" type="text" placeholder="Search..." /></span>
       <!--<input type="button" value="TEST" onclick="dhmenu.testStatuses();" />-->
     </div>
