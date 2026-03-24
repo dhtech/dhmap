@@ -15,7 +15,7 @@ if __name__ == '__main__':
   c.execute(
     'SELECT name, horizontal, "table" AS class, hall, x1, y1, x2, y2, width, height FROM table_coordinates'
     
-    ' UNION SELECT sc.name, 0 AS horizontal, "switch" AS class, tc.hall hall, sc.x + 5 AS x1, sc.y + 5 AS y1, sc.x + 5 AS x2,'
+    ' UNION SELECT sc.name, tc.horizontal AS horizontal, "switch" AS class, tc.hall hall, sc.x + 5 AS x1, sc.y + 5 AS y1, sc.x + 5 AS x2,'
     ' sc.y + 5 AS y1, 5 AS width, 5 AS height '
     ' FROM switch_coordinates sc '
     ' INNER JOIN table_coordinates tc ON sc.table_name = tc.name'

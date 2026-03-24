@@ -125,10 +125,18 @@ var dhmap = {};
 
 	// Draw a network switch. Defaults to amber colour
 	function renderSwitch(object, dry) {
-		object.width = object.width + 1.7;
-		object.height = object.height + 1.7;
-		object.x1 = object.x1 - 1;
-		object.y1 = object.y1 - 0.7;
+		if(object.horizontal) {
+		        object.width = object.width + 1.7;
+		        object.height = object.height + 1.7;
+        		object.x1 = object.x1 - 0.7 - (object.width/2);
+	        	object.y1 = object.y1 - 0.7;
+		} else {
+			y_offset = object.height/2
+			object.width = object.width + 1.7;
+			object.height = object.height + 1.7;
+			object.x1 = object.x1 - 0.7;
+			object.y1 = object.y1 - 0.7 - (object.height/2);
+		}
 		switches[object.name] = object;
 		renderRectangle(object, dhmap.colour.UNKNOWN, false, dry);
 	}
