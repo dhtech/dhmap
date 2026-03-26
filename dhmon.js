@@ -62,7 +62,7 @@ function checkIfaceErrors(sw, model, ifaces) {
 
   var failed = false;
   var show_consumer_ifaces =
-    document.getElementById('hilight_consumer_issues').checked;
+    document.getElementById('consumer_mode').checked;
   for (var name in ifaces) {
     var iface = ifaces[name];
 
@@ -89,7 +89,7 @@ function checkIfaceStp(sw, model, ifaces) {
 
   var failed = false;
   var show_consumer_ifaces =
-    document.getElementById('hilight_consumer_issues').checked;
+    document.getElementById('consumer_mode').checked;
 
   for (var name in ifaces) {
     var iface = ifaces[name];
