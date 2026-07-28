@@ -40,25 +40,48 @@ class RevHandler(http.server.SimpleHTTPRequestHandler):
 
   def _proxy(self, path):
     url = 'http://localhost:%d%s' % (self.analytics_port, path)
+
+    # Fetch first, then relay. Writing to the client inside this try would
+    # let a disconnected browser - BrokenPipeError is an OSError - be
+    # misreported as the backend being unreachable.
     try:
       with urllib.request.urlopen(url, timeout=self.proxy_timeout) as upstream:
-        self._relay(upstream.status, upstream.headers, upstream.read())
+        status, headers, body = (
+            upstream.status, upstream.headers, upstream.read())
     except urllib.error.HTTPError as error:
       # Pass the backend's own error through rather than masking it.
       with error:
-        self._relay(error.code, error.headers, error.read())
+        status, headers, body = error.code, error.headers, error.read()
     except (urllib.error.URLError, OSError) as error:
-      self.send_error(502, 'analytics backend unreachable at %s: %s'
-                           % (url, error))
+      return self._safely(self.send_error, 502,
+                          'analytics backend unreachable at %s: %s'
+                          % (url, error))
+
+    self._relay(status, headers, body)
 
   def _relay(self, status, headers, body):
-    self.send_response(status)
-    content_type = headers.get('Content-Type')
-    if content_type:
-      self.send_header('Content-Type', content_type)
-    self.send_header('Content-Length', str(len(body)))
-    self.end_headers()
-    self.wfile.write(body)
+    def write():
+      self.send_response(status)
+      content_type = headers.get('Content-Type')
+      if content_type:
+        self.send_header('Content-Type', content_type)
+      self.send_header('Content-Length', str(len(body)))
+      self.end_headers()
+      self.wfile.write(body)
+
+    self._safely(write)
+
+  def _safely(self, action, *args):
+    """Run `action`, tolerating the client having gone away.
+
+    The map polls every 10 seconds, so a reload or a closed tab routinely
+    drops a connection mid-response. That is normal, not an error worth a
+    traceback.
+    """
+    try:
+      action(*args)
+    except (BrokenPipeError, ConnectionResetError):
+      self.close_connection = True
 
 
 def serve(port=DEFAULT_PORT, analytics_port=DEFAULT_ANALYTICS_PORT,

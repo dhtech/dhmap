@@ -1,8 +1,10 @@
 """Tests for localserver.py, the local development web server."""
 import contextlib
 import http.server
+import io
 import json
 import os
+import socket
 import socketserver
 import sys
 import threading
@@ -117,6 +119,29 @@ class LocalServerTest(unittest.TestCase):
       urllib.request.urlopen(self.url('/analytics/ping.status'))
     self.assertEqual(caught.exception.code, 502)
     caught.exception.close()
+
+  def test_a_client_disconnect_is_handled_quietly(self):
+    # The map polls every 10s, so reloads drop connections mid-response all
+    # the time. BrokenPipeError is an OSError, so relaying to the client
+    # inside the proxy's error handling turned a disconnect into a bogus
+    # "backend unreachable" 502 and then crashed sending it - filling the
+    # log with tracebacks that look like a broken backend.
+    captured = io.StringIO()
+    with backend_on(5099, {'ping.status': {'sw': 1}}):
+      with contextlib.redirect_stderr(captured):
+        connection = socket.create_connection(('127.0.0.1', self.port))
+        connection.sendall(b'GET /analytics/ping.status HTTP/1.1\r\n'
+                           b'Host: localhost\r\n\r\n')
+        connection.close()        # gone before the response is written
+
+        # A second, complete request confirms the first was fully handled,
+        # and that the server is still healthy afterwards.
+        response = urllib.request.urlopen(self.url('/analytics/ping.status'))
+        self.assertEqual(response.status, 200)
+        self.assertEqual(json.loads(response.read()), {'sw': 1})
+
+    self.assertNotIn('BrokenPipeError', captured.getvalue())
+    self.assertNotIn('Traceback', captured.getvalue())
 
   def test_serves_from_the_repository_regardless_of_working_directory(self):
     # The handler pins its directory, so tests can run from anywhere.
