@@ -33,16 +33,18 @@ class RevHandler(http.server.SimpleHTTPRequestHandler):
 
 
 def serve(port=DEFAULT_PORT, analytics_port=DEFAULT_ANALYTICS_PORT,
-          directory=None):
+          directory=None, quiet=False):
   """Create a server. Returns it without serving, so tests can drive it.
 
   Pass port=0 to bind an arbitrary free port; read it back from
-  httpd.server_address[1].
+  httpd.server_address[1]. Pass quiet=True to suppress request logging.
   """
   # Subclass per server so concurrent servers can target different backends;
   # setting the attribute on a functools.partial would not reach the class.
-  handler = type('BoundRevHandler', (RevHandler,),
-                 {'analytics_port': analytics_port})
+  overrides = {'analytics_port': analytics_port}
+  if quiet:
+    overrides['log_message'] = lambda self, *args: None
+  handler = type('BoundRevHandler', (RevHandler,), overrides)
   handler = functools.partial(
       handler,
       directory=directory or os.path.dirname(os.path.abspath(__file__)))
