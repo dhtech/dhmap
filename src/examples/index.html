@@ -3,9 +3,31 @@
     <title>Example Usage - dhmap</title>
     <script src="../vendor/jquery-3.7.1/jquery-3.7.1.min.js"></script>
     <script src="../vendor/raphael-2.3.0/raphael.min.js"></script>
+    <script src="../vendor/raphael-zpd/raphael-zpd.js"></script>
     <script src="../dhmap.js"></script>
     <script src="./example.js"></script>
+    <style>
+body {
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+#header {
+  height: 30px;
+  font-family: arial;
+  padding: 5pt;
+}
+
+#canvas {
+  border-top: 1px solid #dddddd;
+}
+    </style>
   </head>
   <body>
+    <!-- dhmap.init looks up all three of these by id. -->
+    <div id="header">dhmap example</div>
+    <div id="menu_container"></div>
+    <div id="canvas"></div>
   </body>
 </html>
