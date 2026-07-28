@@ -152,10 +152,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
     pass          # quiet by default; tests capture nothing useful from this
 
   def _cors_headers(self):
-    # In production Apache reverse-proxies /analytics, so the browser sees one
-    # origin. localserver.py redirects instead, which makes these requests
-    # cross-origin - and jQuery's X-Requested-With header turns them into
-    # preflighted ones. So both the preflight and the response need CORS.
+    # Not needed when reached through localserver.py, which reverse-proxies
+    # /analytics the way production apache does, so the browser sees one
+    # origin. Kept so the backend also works when a page is pointed straight
+    # at it on port 5000.
     self.send_header('Access-Control-Allow-Origin', '*')
     self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
     self.send_header('Access-Control-Allow-Headers', '*')
