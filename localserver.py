@@ -1,24 +1,68 @@
 #!/usr/bin/env python3
-# Used to run dhmap + analytics on the same machine for dev purposes
+"""Serve dhmap locally, proxying /analytics/ to the analytics backend.
 
-import SimpleHTTPServer
-import SocketServer
+Used to run dhmap + analytics on the same machine for dev purposes. The
+analytics backend is normally dhmon's; for local work without one, see
+test/fake/backend.py, which serves the same endpoints from a scenario.
+"""
+import argparse
+import functools
+import http.server
+import os
+import socketserver
 
-PORT = 8000
+DEFAULT_PORT = 8000
+DEFAULT_ANALYTICS_PORT = 5000
 
-class RevHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+
+class RevHandler(http.server.SimpleHTTPRequestHandler):
+  """Static file handler that redirects /analytics/ to the backend."""
+
+  analytics_port = DEFAULT_ANALYTICS_PORT
+
   def do_GET(self):
     if self.path.startswith('/analytics/'):
       path = self.path[len('/analytics/'):]
       self.send_response(302)
-      self.send_header("Location", "http://localhost:5000/" + path)
+      self.send_header(
+          'Location', 'http://localhost:%d/%s' % (self.analytics_port, path))
       self.end_headers()
       return None
     else:
-      SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
+      return http.server.SimpleHTTPRequestHandler.do_GET(self)
 
-httpd = SocketServer.TCPServer(("", PORT), RevHandler)
 
-print("serving at port {}".format(PORT))
-httpd.serve_forever()
+def serve(port=DEFAULT_PORT, analytics_port=DEFAULT_ANALYTICS_PORT,
+          directory=None):
+  """Create a server. Returns it without serving, so tests can drive it.
 
+  Pass port=0 to bind an arbitrary free port; read it back from
+  httpd.server_address[1].
+  """
+  # Subclass per server so concurrent servers can target different backends;
+  # setting the attribute on a functools.partial would not reach the class.
+  handler = type('BoundRevHandler', (RevHandler,),
+                 {'analytics_port': analytics_port})
+  handler = functools.partial(
+      handler,
+      directory=directory or os.path.dirname(os.path.abspath(__file__)))
+  # Without this a restart within TIME_WAIT fails to bind.
+  socketserver.TCPServer.allow_reuse_address = True
+  return socketserver.TCPServer(('', port), handler)
+
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description=__doc__)
+  parser.add_argument('--port', type=int, default=DEFAULT_PORT,
+                      help='port to serve on (default: %(default)s)')
+  parser.add_argument('--analytics-port', type=int,
+                      default=DEFAULT_ANALYTICS_PORT,
+                      help='analytics backend port (default: %(default)s)')
+  args = parser.parse_args()
+
+  httpd = serve(args.port, args.analytics_port)
+  print('serving at port {}'.format(args.port))
+  try:
+    httpd.serve_forever()
+  except KeyboardInterrupt:
+    httpd.shutdown()

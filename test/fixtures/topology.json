@@ -25,26 +25,14 @@
       "height": 8
     },
     {
-      "name": "D75",
-      "horizontal": 0,
-      "class": "table",
-      "hall": "Hall 1",
-      "x1": 33,
-      "y1": 0,
-      "x2": 25,
-      "y2": 37,
-      "width": 38,
-      "height": 8
-    },
-    {
       "name": "d73-a.event.dreamhack.local",
       "horizontal": 0,
       "class": "switch",
       "hall": "Hall 1",
-      "x1": 72,
-      "y1": 23,
-      "x2": 72,
-      "y2": 23,
+      "x1": 15,
+      "y1": 25,
+      "x2": 15,
+      "y2": 25,
       "width": 5,
       "height": 5
     },
@@ -53,22 +41,10 @@
       "horizontal": 0,
       "class": "switch",
       "hall": "Hall 1",
-      "x1": 55,
-      "y1": 23,
-      "x2": 55,
-      "y2": 23,
-      "width": 5,
-      "height": 5
-    },
-    {
-      "name": "d75-a.event.dreamhack.local",
-      "horizontal": 0,
-      "class": "switch",
-      "hall": "Hall 1",
-      "x1": 38,
-      "y1": 23,
-      "x2": 38,
-      "y2": 23,
+      "x1": 17,
+      "y1": 27,
+      "x2": 17,
+      "y2": 27,
       "width": 5,
       "height": 5
     }
