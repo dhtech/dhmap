@@ -233,3 +233,45 @@ test('dhmap.filter', async (t) => {
       'substr(0, -1) gives an empty name, so no table matches');
   });
 });
+
+test('a switch label box', async (t) => {
+  /** The white box and the name shown over switch NAME on hover. */
+  function labelOf(sandbox, name) {
+    const rect = sandbox.shapes.find(
+      (s) => s.type === 'rect' && s.labelbox && s.labelbox.label.attrs.text ===
+        name.split('.')[0].toUpperCase());
+    return rect.labelbox;
+  }
+
+  // A long name (an area's dist switch) stuck out of the old fixed-size box
+  await t.test('is as wide as the name it shows, short or long', () => {
+    const topology = topo.basic();
+    topology['Hall 1'].push(
+      topo.accessSwitch('north-hall-dsw.event.dreamhack.local', 'Hall 1', 30, 30));
+    const sandbox = drawn(topology);
+    for (const name of ['d73-a.event.dreamhack.local',
+                        'north-hall-dsw.event.dreamhack.local']) {
+      const box = labelOf(sandbox, name);
+      const text = box.label.getBBox();
+      assert.ok(box.attrs.x < text.x, `${name}: box starts left of the name`);
+      assert.ok(box.attrs.x + box.attrs.width > text.x + text.width,
+        `${name}: box ends right of the name`);
+      assert.ok(box.attrs.y < text.y &&
+        box.attrs.y + box.attrs.height > text.y + text.height,
+        `${name}: box is taller than the name`);
+    }
+  });
+
+  await t.test('is hidden until hover and shows with its name', () => {
+    const sandbox = drawn();
+    const box = labelOf(sandbox, 'd73-a.event.dreamhack.local');
+    assert.equal(box.visible, false);
+    assert.equal(box.label.visible, false);
+    const rect = sandbox.shapes.find((s) => s.labelbox === box);
+    rect.handlers.mouseover.call(rect);
+    assert.equal(box.visible, true);
+    assert.equal(box.label.visible, true);
+    rect.handlers.mouseout.call(rect);
+    assert.equal(box.visible, false);
+  });
+});

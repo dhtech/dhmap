@@ -28,6 +28,20 @@ function makeShape(type, attrs, paper) {
     return shape;
   };
   shape.rotate = (deg) => { shape.rotation = deg; return shape; };
+  // Raphael measures the drawn element; here a text's box is estimated
+  // from its length and font size (0.6 em a letter, 1.2 em a line),
+  // centred on (x, y) as Raphael's default text-anchor "middle" does.
+  shape.getBBox = () => {
+    if (type !== 'text') {
+      const { x, y, width, height } = shape.attrs;
+      return { x, y, width, height };
+    }
+    const size = shape.attrs['font-size'] || 10;
+    const width = String(shape.attrs.text).length * size * 0.6;
+    const height = size * 1.2;
+    return { x: shape.attrs.x - width / 2, y: shape.attrs.y - height / 2,
+             width, height };
+  };
   shape.hide = () => { shape.visible = false; return shape; };
   shape.show = () => { shape.visible = true; return shape; };
   shape.toFront = () => shape;
