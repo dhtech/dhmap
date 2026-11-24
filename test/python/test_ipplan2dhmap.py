@@ -6,6 +6,7 @@ JSON it prints. Fixtures are built into a temp directory and never committed.
 """
 import json
 import os
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -108,7 +109,7 @@ class RealWorldQuirksTest(unittest.TestCase):
     self.assertIn('F', generate(db))
 
   def test_hall_less_name_without_digits_crashes(self):
-    # KNOWN DEFECT (ipplan2dhmap.py:44): re.search(...).group(1) is called
+    # KNOWN DEFECT (ipplan2dhmap.py:54): re.search(...).group(1) is called
     # without checking for a match, so a name like VIP raises AttributeError.
     db = build_ipplan.build(topology.basic())
     conn = sqlite3.connect(db)
@@ -182,7 +183,10 @@ class RealDataTest(unittest.TestCase):
     self.assertGreater(len(self.result), 0)
     for hall, objects in self.result.items():
       for obj in objects:
-        self.assertCountEqual(obj.keys(), topology.KEYS)
+        # every key it must have, and nothing it may not
+        self.assertLessEqual(set(topology.KEYS), set(obj.keys()))
+        self.assertLessEqual(set(obj.keys()),
+                             set(topology.KEYS + topology.OPTIONAL_KEYS))
         self.assertEqual(obj['hall'], hall)
 
   def test_every_grid_hall_has_objects(self):
@@ -198,6 +202,133 @@ class RealDataTest(unittest.TestCase):
         continue
       for obj in objects:
         self.assertIn(obj['class'], drawn)
+
+
+def build_unseated(path, nets=None, hosts=None):
+  """A plan without a seat map: empty coordinate tables, switches in
+  <AREA>-ACCESS-MGMT networks, dist switches named after their area."""
+  conn = sqlite3.connect(path)
+  conn.executescript('''
+    CREATE TABLE table_coordinates (name TEXT, hall TEXT, x1 INT, x2 INT,
+      y1 INT, y2 INT, x_start INT, y_start INT, width INT, height INT,
+      horizontal INT);
+    CREATE TABLE switch_coordinates (name TEXT, table_name TEXT, x INT, y INT);
+    CREATE TABLE hall_positions (name TEXT, x INT, y INT);
+    CREATE TABLE network (node_id INT, name TEXT);
+    CREATE TABLE host (node_id INT, name TEXT, network_id INT);
+    CREATE TABLE option (node_id INT, name TEXT, value TEXT);
+  ''')
+  nets = nets or {'EVENT@NORTH-ACCESS-MGMT': 1, 'EVENT@SOUTH-ACCESS-MGMT': 2,
+                  'EVENT@DIST-LOOPBACKS': 3, 'EVENT@OFFICE-LAN': 4}
+  for name, nid in nets.items():
+    conn.execute('INSERT INTO network VALUES (?, ?)', (nid, name))
+  hosts = hosts or [  # name, network, layer
+    ('north-dsw.example.test', 3, 'dist'),
+    ('south-dst.example.test', 3, 'dist'),
+    ('lonely-dsw.example.test', 3, 'dist'),
+    ('north01-a.example.test', 1, 'access'),
+    ('north01-b.example.test', 1, 'access'),
+    ('north02-a.example.test', 1, 'access'),
+    ('north03-a.example.test', 1, 'access'),
+    ('north04-a.example.test', 1, 'access'),
+    ('south01-a.example.test', 2, 'access'),
+    ('desk-sw.example.test', 4, 'access'),      # not an access network
+  ]
+  for i, (name, net, layer) in enumerate(hosts, 100):
+    conn.execute('INSERT INTO host VALUES (?, ?, ?)', (i, name, net))
+    conn.execute('INSERT INTO option VALUES (?, "layer", ?)', (i, layer))
+  conn.commit()
+  conn.close()
+  return path
+
+
+class AreaModeTest(unittest.TestCase):
+  """No seat map: the switches grouped by area instead of a blank map."""
+
+  def setUp(self):
+    self.tmp = tempfile.mkdtemp()
+    self.result = generate(build_unseated(os.path.join(self.tmp, 'plan.db')))
+
+  def tearDown(self):
+    shutil.rmtree(self.tmp)
+
+  def switches(self, hall):
+    return [o['name'].split('.')[0] for o in self.result[hall]
+            if o['class'] == 'switch']
+
+  def test_one_box_per_access_network_with_its_dist_first(self):
+    self.assertEqual(self.switches('NORTH'), [
+        'north-dsw', 'north01-a', 'north01-b', 'north02-a', 'north03-a',
+        'north04-a'])
+    self.assertEqual(self.switches('SOUTH'), ['south-dst', 'south01-a'])
+
+  def test_a_dist_without_an_area_gets_a_box_of_its_own(self):
+    self.assertEqual(self.switches('LONELY'), ['lonely-dsw'])
+
+  def test_switches_outside_access_networks_are_left_out(self):
+    names = [n for hall in self.result for n in
+             (o['name'] for o in self.result[hall])]
+    self.assertFalse(any('desk-sw' in n for n in names))
+
+  def test_no_dist_or_prod_list_beside_the_areas(self):
+    self.assertNotIn('Dist', self.result)
+    self.assertNotIn('Prod', self.result)
+
+  def test_the_grid_places_every_area(self):
+    grid = self.result['Grid']
+    self.assertEqual(sorted(g['name'] for g in grid),
+                     ['LONELY', 'NORTH', 'SOUTH'])
+    self.assertEqual({(g['x1'], g['y1']) for g in grid},
+                     {(0, 0), (1, 0), (2, 0)})
+
+  def test_each_switch_sits_on_a_labelled_tile(self):
+    north = self.result['NORTH']
+    tiles = [o for o in north if o['class'] == 'table']
+    self.assertEqual(tiles[0]['label'], 'north-dsw')
+    # four tiles to a row: the fifth starts the second row
+    self.assertEqual((tiles[4]['x1'], tiles[4]['y1'] > tiles[0]['y1']),
+                     (tiles[0]['x1'], True))
+    for tile, sw in zip(tiles, (o for o in north if o['class'] == 'switch')):
+      self.assertTrue(tile['x1'] < sw['x1'] < tile['x1'] + tile['width'])
+
+
+
+class AreaNamesTest(unittest.TestCase):
+  """What the area names may and may not be."""
+
+  def setUp(self):
+    self.tmp = tempfile.mkdtemp()
+
+  def tearDown(self):
+    shutil.rmtree(self.tmp)
+
+  def build(self, nets, hosts):
+    return generate(build_unseated(os.path.join(self.tmp, 'plan.db'),
+                                   nets, hosts))
+
+  def test_a_name_the_page_keeps_for_itself_is_renamed(self):
+    # the page treats Dist, Prod and Grid as its own lists, whatever case
+    result = self.build({'EVENT@PROD-ACCESS-MGMT': 1, 'EVENT@DIST-LOOPBACKS': 2},
+                        [('prod01-a.example.test', 1, 'access'),
+                         ('grid-dsw.example.test', 2, 'dist')])
+    self.assertIn('PROD AREA', result)
+    self.assertIn('GRID AREA', result)
+    self.assertNotIn('PROD', result)
+    self.assertEqual(sorted(g['name'] for g in result['Grid']),
+                     ['GRID AREA', 'PROD AREA'])
+
+  def test_the_longest_matching_area_gets_the_dist(self):
+    result = self.build({'EVENT@H1-NORTH-ACCESS-MGMT': 1,
+                         'EVENT@H1-NORTH-VIP-ACCESS-MGMT': 2,
+                         'EVENT@DIST-LOOPBACKS': 3},
+                        [('h1-north01-a.example.test', 1, 'access'),
+                         ('h1-north-vip01-a.example.test', 2, 'access'),
+                         ('h1-north-vip-dsw.example.test', 3, 'dist'),
+                         ('h1-north-dsw.example.test', 3, 'dist')])
+    first = lambda hall: next(o['name'] for o in result[hall]
+                              if o['class'] == 'switch').split('.')[0]
+    self.assertEqual(first('H1-NORTH-VIP'), 'h1-north-vip-dsw')
+    self.assertEqual(first('H1-NORTH'), 'h1-north-dsw')
 
 
 if __name__ == '__main__':

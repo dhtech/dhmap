@@ -262,3 +262,39 @@ test('computeStatus', async (t) => {
     });
   });
 });
+
+test('drawData', async (t) => {
+  /** dhmon with a dhmap whose init records what it drew and throws on BAD. */
+  function withRecordingMap() {
+    const drew = [];
+    const sandbox = loadDhmon({
+      dhmap: {
+        colour: {},
+        updateSwitches: () => {},
+        init: (objects) => {
+          drew.push(Object.keys(objects).join(','));
+          if (objects.BAD) throw new TypeError('cannot draw');
+        },
+      },
+      dhmenu: { init: () => {}, updateSwitches: () => {} },
+    });
+    return { sandbox, drew };
+  }
+
+  await t.test('draws and remembers what it drew', () => {
+    const { sandbox, drew } = withRecordingMap();
+    assert.equal(sandbox.drawData({ A: [] }), true);
+    assert.deepEqual(drew, ['A']);
+    assert.equal(sandbox.data_text, JSON.stringify({ A: [] }));
+  });
+
+  await t.test('a data.json that cannot be drawn leaves the last good map', () => {
+    const { sandbox, drew } = withRecordingMap();
+    sandbox.drawData({ A: [] });
+    assert.equal(sandbox.drawData({ BAD: [] }), false);
+    // tried the new one, then drew the old one again
+    assert.deepEqual(drew, ['A', 'BAD', 'A']);
+    assert.equal(sandbox.data_text, JSON.stringify({ A: [] }));
+    assert.equal(sandbox.bad_text, JSON.stringify({ BAD: [] }));
+  });
+});

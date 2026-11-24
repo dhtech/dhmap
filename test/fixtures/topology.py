@@ -13,6 +13,9 @@ REPO_ROOT = os.path.dirname(os.path.dirname(FIXTURE_DIR))
 # Every key ipplan2dhmap.py puts on an object.
 KEYS = ['name', 'horizontal', 'class', 'hall',
         'x1', 'y1', 'x2', 'y2', 'width', 'height']
+# Keys only some objects carry: a tile of the map without a seat map has
+# its own text.
+OPTIONAL_KEYS = ['label']
 
 # The generator offsets switch coordinates by this much; build_ipplan reverses
 # it so a round trip lands back on the original values.

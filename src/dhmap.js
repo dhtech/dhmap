@@ -72,10 +72,17 @@ var dhmap = {};
           var labelOffsetX = 23;
           var labelOffsetY = 13;
         }
-        rectangle.label = paper.text(rectangle.attr('x') + labelOffsetX, rectangle.attr('y') + labelOffsetY, shortName);
-        rectangle.label.attr({"font-size": 22});
-        if(object.horizontal == 0 && isTable) {
-          rectangle.label.rotate(90);
+        if (object.label) {
+          // a tile of the map without a seat map: its own text, left-aligned,
+          // in the middle of the box (a seat map's tables keep the old label)
+          rectangle.label = paper.text(rectangle.attr('x') + 10, rectangle.attr('y') + height / 2, object.label);
+          rectangle.label.attr({"font-size": 22, "text-anchor": "start"});
+        } else {
+          rectangle.label = paper.text(rectangle.attr('x') + labelOffsetX, rectangle.attr('y') + labelOffsetY, shortName);
+          rectangle.label.attr({"font-size": 22});
+          if(object.horizontal == 0 && isTable) {
+            rectangle.label.rotate(90);
+          }
         }
       }
       
@@ -217,10 +224,36 @@ var dhmap = {};
   // Which render method to use for each object type
   var renders = { 'switch': renderSwitch, 'table': renderTable };
 
+  // The drawing surface and its zoom are made ONCE. A later init (the page
+  // redraws when data.json changes) only empties the surface: a second
+  // RaphaelZPD would wrap Raphael's event functions again, and the old
+  // wrappers look up a viewport that is gone - hover and click would throw.
+  // Keeping the viewport also keeps the zoom and pan the viewer chose.
+  var zpd = null;
+
+  function clearPaper() {
+    var all = [];
+    paper.forEach(function (element) { all.push(element); });
+    all.forEach(function (element) { element.remove(); });
+  }
+
   dhmap.init = function(objects, click_callback) {
     var canvas = document.getElementById('canvas');
     var menu = document.getElementById('menu_container');
     var header = document.getElementById('header');
+
+    onclick = click_callback;
+    switches = {};
+    canvasObjects = {};
+    offsetX = 0;
+    offsetY = 0;
+
+    if (paper !== null) {
+      clearPaper();
+      draw(objects);
+      return;
+    }
+
     canvas.innerHTML = '';
     canvas.style.marginLeft = menu.clientWidth;
 
@@ -240,16 +273,13 @@ var dhmap = {};
 
     menu.style.height = window.innerHeight - header.clientHeight;
     paper = Raphael(canvas);
-    var zpd = new RaphaelZPD(paper, { zoom: true, pan: true, drag: false });
+    zpd = new RaphaelZPD(paper, { zoom: true, pan: true, drag: false });
     zpd.gelem.setAttribute('transform', defaultMatrix);
 
-    onclick = click_callback;
-    switches = {};
-    canvasObjects = {};
+    draw(objects);
+  }
 
-    offsetX = 0;
-    offsetY = 0;
-
+  function draw(objects) {
     // First pass: Calculate hall sizes.
     // This is to have a simple heuristic to group small halls together.
 
@@ -279,7 +309,25 @@ var dhmap = {};
       hallsizelist.push([boundingY * boundingX, hall]);
     }
 
-    // Second phase: Generate 2D array from the halls position objects
+    // Second phase: Generate 2D array from the halls position objects.
+    // Only halls that have something to draw take a place, and every such
+    // hall gets one: a hall position without tables (a seat map half
+    // entered) is dropped, a hall without a position goes in a row of its
+    // own below the others - neither may leave the page blank.
+    var grid = (objects['Grid'] || []).filter(function (h) {
+      return hallsizes[h.name] !== undefined;
+    });
+    var placed = grid.map(function (h) { return h.name; });
+    var spareRow = grid.length ? Math.max.apply(null, grid.map(function (h) { return h.y1; })) + 1 : 0;
+    Object.keys(hallsizes).filter(function (name) {
+      return placed.indexOf(name) < 0;
+    }).forEach(function (name, i) {
+      grid.push({'name': name, 'class': 'hall', 'hall': 'Grid', 'x1': i, 'y1': spareRow});
+    });
+    if (grid.length == 0) {
+      return;
+    }
+    objects['Grid'] = grid;
     // Figure out grid size
     var maxrows = Math.max(...objects['Grid'].map(p => p.y1));
     var maxcols = Math.max(...objects['Grid'].map(p => p.x1));
