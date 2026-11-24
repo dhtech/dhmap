@@ -91,17 +91,24 @@ var dhmap = {};
         // Add a label
         var labelOffsetX = 5;
         var labelOffsetY = -37;
-        rectangle.labelbox = paper.rect(
-          rectangle.attr('x') + labelOffsetX, 
-          rectangle.attr('y') + labelOffsetY,
-          width+50,
-          width+10);
-        rectangle.labelbox.attr({fill: "#fff"});
-        rectangle.labelbox.label = paper.text(
-          rectangle.attr('x') + labelOffsetX + 38, 
-          rectangle.attr('y') + labelOffsetY + 20, 
+        var label = paper.text(
+          rectangle.attr('x') + labelOffsetX + 38,
+          rectangle.attr('y') + labelOffsetY + 20,
           shortName);
-        rectangle.labelbox.label.attr({"font-size": 22});
+        label.attr({"font-size": 22});
+        // The white box is sized to the name as drawn, so a long name
+        // (an area's dist switch, NORTH-HALL-DSW) is not wider than its box.
+        var bbox = label.getBBox();
+        var padX = 6;
+        var padY = 3;
+        rectangle.labelbox = paper.rect(
+          bbox.x - padX,
+          bbox.y - padY,
+          bbox.width + 2 * padX,
+          bbox.height + 2 * padY);
+        rectangle.labelbox.attr({fill: "#fff"});
+        rectangle.labelbox.label = label;
+        label.toFront();
       }
 
       // For some objects it might be desirable to hide the label.
