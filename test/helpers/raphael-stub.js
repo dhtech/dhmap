@@ -31,6 +31,10 @@ function makeShape(type, attrs, paper) {
   shape.hide = () => { shape.visible = false; return shape; };
   shape.show = () => { shape.visible = true; return shape; };
   shape.toFront = () => shape;
+  shape.remove = () => {
+    paper.shapes.splice(paper.shapes.indexOf(shape), 1);
+    shape.removed = true;
+  };
   for (const event of ['mouseover', 'mouseout', 'click']) {
     shape[event] = (fn) => { shape.handlers[event] = fn; return shape; };
   }
@@ -43,6 +47,8 @@ function makeShape(type, attrs, paper) {
 function makeRaphael() {
   function Raphael() {
     const paper = { shapes: [] };
+    Raphael.papers = (Raphael.papers || 0) + 1;
+    paper.forEach = (fn) => { paper.shapes.slice().forEach(fn); return paper; };
     paper.rect = (x, y, width, height) =>
       makeShape('rect', { x, y, width, height }, paper);
     paper.text = (x, y, text) =>
@@ -55,6 +61,7 @@ function makeRaphael() {
 
 /** RaphaelZPD(paper, opts) - only its gelem transform is touched. */
 function RaphaelZPD() {
+  RaphaelZPD.made = (RaphaelZPD.made || 0) + 1;
   this.gelem = {
     attributes: {},
     setAttribute(name, value) { this.attributes[name] = value; },

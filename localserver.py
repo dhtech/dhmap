@@ -32,7 +32,8 @@ class RevHandler(http.server.SimpleHTTPRequestHandler):
   proxy_timeout = 10
 
   def do_GET(self):
-    if self.path.startswith(ANALYTICS_PREFIX):
+    # /analytics and /analytics/..., not /analytics-something.html
+    if self.path == ANALYTICS_PREFIX or self.path.startswith(ANALYTICS_PREFIX + '/'):
       # ProxyPass strips the prefix, so /analytics/ping.status is the
       # backend's /ping.status.
       return self._proxy(self.path[len(ANALYTICS_PREFIX):])

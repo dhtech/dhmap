@@ -318,9 +318,54 @@ function updateSwitchDialog(sw, fqdn) {
 }
 
 
+// The layout comes from data.json, which the server makes from the plan
+// (every minute on the status server). It is read again every
+// DATA_RELOAD_MS, and the map is drawn anew when it changed - so a page
+// left open, on a screen, picks up new switches and areas, and the change
+// from the map without a seat map to the seat map, without a reload.
+var DATA_RELOAD_MS = 120000;
+var data_text = null;   // the data.json the map shows
+var bad_text = null;    // the last one that could not be drawn
+
+// Draw the map and menu from objects. A data.json that cannot be drawn
+// leaves the map as it was (drawn again from the last good one) and is not
+// tried again until the file changes once more.
+function drawData(objects) {
+  var text = JSON.stringify(objects);
+  try {
+    dhmap.init(objects, click);
+    // the menu gets its own copy: both change what they are given
+    dhmenu.init(JSON.parse(text), click);
+  } catch (e) {
+    console.error('[' + new Date().toLocaleString() + '] data.json could not be drawn: ' + e);
+    bad_text = text;
+    if (data_text !== null) {
+      dhmap.init(JSON.parse(data_text), click);
+      dhmenu.init(JSON.parse(data_text), click);
+    }
+    return false;
+  }
+  data_text = text;
+  if (Object.keys(switch_status).length > 0) {
+    dhmap.updateSwitches(switch_status);
+    dhmenu.updateSwitches(switch_status);
+  }
+  return true;
+}
+
+function reloadData() {
+  $.getJSON('./data.json?t=' + Date.now(), function(objects) {
+    var text = JSON.stringify(objects);
+    if (text !== data_text && text !== bad_text) {
+      console.log('[' + new Date().toLocaleString() + '] data.json changed - drawing the map anew');
+      drawData(objects);
+    }
+  });
+}
+
 $.getJSON('./data.json', function(objects) {
-  dhmap.init(objects, click);
-  dhmenu.init(objects, click);
+  drawData(objects);
+  setInterval(reloadData, DATA_RELOAD_MS);
 
   function updateStatus() {
     start_fetch = new Date();

@@ -103,16 +103,48 @@ test('dhmap.init', async (t) => {
     assert.equal(target.y1, 16.05);
   });
 
-  // KNOWN DEFECT (dhmap.js:358): halls are sized only from halls that have
-  // objects, but the third phase looks up every hall named in Grid. Adding a
-  // hall to hall_positions before its tables exist takes the map down.
-  await t.test('throws for a Grid hall with no objects (known defect)', () => {
+  // Was a known defect until the map got its mode without a seat map: a hall
+  // in hall_positions before its tables exist took the whole map down.
+  await t.test('drops a Grid hall with no objects and draws the rest', () => {
     const topology = topo.basic();
     topology['Grid'].push(topo.hallMarker('Hall 9', 1, 0));
-    assert.throws(() => loadDhmap().dhmap.init(topology, () => {}), (err) => {
-      assert.equal(err.name, 'TypeError');
-      return true;
-    });
+    const sandbox = loadDhmap();
+    sandbox.dhmap.init(topology, () => {});
+    const labels = sandbox.shapes.filter((s) => s.type === 'text').map((s) => s.attrs.text);
+    assert.ok(labels.includes('Hall 1'));
+    assert.ok(!labels.includes('Hall 9'));
+  });
+
+  await t.test('places a hall that has no Grid entry instead of leaving it out', () => {
+    const topology = topo.twoHalls();
+    topology['Grid'] = topology['Grid'].filter((h) => h.name !== 'Hall 2');
+    const labels = drawn(topology).shapes
+      .filter((s) => s.type === 'text' && /^Hall /.test(s.attrs.text))
+      .map((s) => s.attrs.text);
+    assert.deepEqual(labels.sort(), ['Hall 1', 'Hall 2']);
+  });
+
+  await t.test('draws without any Grid at all', () => {
+    const topology = topo.basic();
+    delete topology['Grid'];
+    const labels = drawn(topology).shapes.filter((s) => s.type === 'text').map((s) => s.attrs.text);
+    assert.ok(labels.includes('Hall 1'));
+  });
+
+  // The page draws anew when data.json changes. A second RaphaelZPD would
+  // wrap Raphael's event functions again and hover/click would throw.
+  await t.test('a second init reuses the surface and its zoom', () => {
+    const sandbox = loadDhmap();
+    const zoomsBefore = sandbox.RaphaelZPD.made || 0;   // shared by every sandbox
+    sandbox.dhmap.init(topo.basic(), () => {});
+    const first = sandbox.shapes.slice();
+    sandbox.dhmap.init(topo.twoHalls(), () => {});
+    assert.equal(sandbox.Raphael.papers, 1, 'one drawing surface');
+    assert.equal(sandbox.RaphaelZPD.made - zoomsBefore, 1, 'one zoom');
+    assert.ok(first.every((s) => s.removed), 'the old shapes are gone');
+    const labels = sandbox.shapes.filter((s) => s.type === 'text' && /^Hall /.test(s.attrs.text))
+      .map((s) => s.attrs.text);
+    assert.deepEqual(labels.sort(), ['Hall 1', 'Hall 2']);
   });
 });
 
