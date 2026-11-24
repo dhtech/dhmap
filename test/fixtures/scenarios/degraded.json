@@ -1,0 +1,86 @@
+{
+  "d73-a.event.dreamhack.local": {
+    "alert": false,
+    "interfaces": [
+      {
+        "admin": "up",
+        "errors_in": 0,
+        "errors_out": 0,
+        "lastoid": 1,
+        "layer": "dist",
+        "name": "ge-0/0/1",
+        "rx": 0,
+        "speed": 1000,
+        "status": "up",
+        "stp": "ok",
+        "tx": 0
+      }
+    ],
+    "model": "ex2200",
+    "ping": 0,
+    "snmp_since": 0
+  },
+  "d74-a.event.dreamhack.local": {
+    "alert": false,
+    "interfaces": [
+      {
+        "admin": "up",
+        "errors_in": 0,
+        "errors_out": 0,
+        "lastoid": 1,
+        "layer": "dist",
+        "name": "ge-0/0/1",
+        "rx": 0,
+        "speed": 1000,
+        "status": "up",
+        "stp": "ok",
+        "tx": 0
+      }
+    ],
+    "model": "ex2200",
+    "ping": 90,
+    "snmp_since": 0
+  },
+  "dist-core.event.dreamhack.local": {
+    "alert": false,
+    "interfaces": [
+      {
+        "admin": "up",
+        "errors_in": 0,
+        "errors_out": 0,
+        "lastoid": 1,
+        "layer": "dist",
+        "name": "ge-0/0/1",
+        "rx": 0,
+        "speed": 1000,
+        "status": "up",
+        "stp": "error",
+        "tx": 0
+      }
+    ],
+    "model": "ex2200",
+    "ping": 0,
+    "snmp_since": 0
+  },
+  "prod-sw1.event.dreamhack.se": {
+    "alert": false,
+    "interfaces": [
+      {
+        "admin": "up",
+        "errors_in": 0,
+        "errors_out": 0,
+        "lastoid": 1,
+        "layer": "dist",
+        "name": "xe-0/0/1",
+        "rx": 0,
+        "speed": 100,
+        "status": "up",
+        "stp": "ok",
+        "tx": 0
+      }
+    ],
+    "model": "ex2200",
+    "ping": 0,
+    "snmp_since": 0
+  }
+}

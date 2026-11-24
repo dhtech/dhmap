@@ -1,1 +1,17 @@
 /data.json
+
+# Test outputs - never commit anything a test run produces
+node_modules/
+test-results/
+playwright-report/
+.playwright/
+__pycache__/
+*.pyc
+
+# Real ipplan databases must never be committed (they contain host
+# addressing and network plans). Drop them in local/ for local testing.
+*.db
+*.db.xz
+/local/*
+!/local/.gitkeep
+!/local/README.md

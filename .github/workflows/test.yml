@@ -1,0 +1,61 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # The core tiers install nothing, so this job is fast and cannot be broken
+  # by a registry outage. It is also the job that proves a bare checkout works:
+  # there is no ipplan database here, so the real-data tests skip.
+  core:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # ipplan2dhmap.py runs on whatever python the server ships, so cover
+        # both the oldest still-supported version and the newest.
+        python-version: ['3.12', '3.14']
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: JS logic
+        run: make test-unit
+
+      - name: Python, servers and fake backend
+        run: make test-py
+
+  # jsdom, Playwright and a browser. Uses the same image as test/podman.sh so
+  # local and CI runs are the same environment.
+  browser:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.0-noble
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Menu under jsdom
+        run: node --test "test/dom/*.test.js"
+
+      - name: Full app in chromium
+        run: npx playwright test
+
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

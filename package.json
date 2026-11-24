@@ -1,0 +1,17 @@
+{
+  "name": "dhmap",
+  "version": "0.0.0",
+  "private": true,
+  "description": "HTML5/JS library for drawing and updating network layouts",
+  "license": "BSD-3-Clause",
+  "scripts": {
+    "test": "make test",
+    "test:unit": "node --test \"test/unit/*.test.js\"",
+    "test:dom": "node --test \"test/dom/*.test.js\"",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.0",
+    "jsdom": "^30.0.0"
+  }
+}
